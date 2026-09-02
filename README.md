@@ -4,6 +4,9 @@
   <img src="macos-app/packaging/Resources/MKCrossfaderLogo.png" width="128" alt="MK Crossfader logo">
 </p>
 
+Created by [Mike Konstantinidis](https://github.com/mks-devx) while building his
+own Maschine-based live set, and released free for the community.
+
 MK Crossfader is a free, open-source pair of macOS tools for expressive
 crossfading in Maschine 3:
 
