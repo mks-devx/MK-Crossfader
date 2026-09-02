@@ -9,6 +9,8 @@
 - Separated the Ableton Live MIDI multi-control and VST3 audio crossfading
   workflows more clearly.
 - Improved setup, installer, support, compatibility, and recovery wording.
+- Reorganised the main README around workflow selection, interface previews,
+  installation, compatibility, and live-use guidance.
 
 ## 2026-09-03 - 0.2.9
 

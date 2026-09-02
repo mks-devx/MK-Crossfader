@@ -1,238 +1,214 @@
-# MK Crossfader
+<div align="center">
+  <img src="macos-app/packaging/Resources/MKCrossfaderLogo.png" width="112" alt="MK Crossfader logo">
+  <h1>MK Crossfader</h1>
+  <p><strong>Audio crossfading and MIDI multi-mapping for live performance</strong></p>
+  <p>
+    Created for Maschine 3 on macOS with Maschine+ in Controller mode.<br>
+    Also verified with Ableton Live and compatible macOS MIDI and VST3 hosts.
+  </p>
+  <p>
+    <a href="https://github.com/mks-devx/MK-Crossfader/releases/latest"><img src="https://img.shields.io/github/v/release/mks-devx/MK-Crossfader?display_name=tag&amp;sort=semver&amp;style=flat-square&amp;color=555555" alt="Latest release"></a>
+    <a href="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml"><img src="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-555555?style=flat-square" alt="AGPL-3.0 licence"></a>
+  </p>
+  <p>
+    <a href="#download-and-install">Download</a> ·
+    <a href="docs/MASCHINE_SETUP.md">Maschine Setup</a> ·
+    <a href="docs/ABLETON_SETUP.md">Ableton Live Setup</a> ·
+    <a href="#documentation">Documentation</a>
+  </p>
+</div>
 
-<p align="center">
-  <img src="macos-app/packaging/Resources/MKCrossfaderLogo.png" width="128" alt="MK Crossfader logo">
-</p>
+---
 
-MK Crossfader was created primarily for live performance with Maschine 3
-desktop software on macOS and Maschine+ hardware in **Controller mode**. The
-idea was to coordinate several sounds or parameters from one physical fader or
-knob while keeping the setup focused enough for live use.
+MK Crossfader began as a focused way to perform transitions from Maschine+
+hardware while running Maschine 3 on a Mac. A single physical fader or knob can
+move several sounds or parameters together, with separate direction, range,
+curve, and return behaviour for each destination.
 
-It includes two independent tools:
+The project provides two workflows:
 
-- **MK MIDI Crossfader** is a native macOS MIDI app. It turns one incoming MIDI
-  CC into multiple independently shaped MIDI CC outputs for levels, filters,
-  sends, effects, and other parameters mapped through MIDI Learn.
-- **MK Crossfader VST3** is a dedicated audio crossfader for Maschine 3,
-  Ableton Live, and other compatible macOS VST3 hosts. It links one Controller
-  instance to multiple audio Target instances and applies smoothed gain without
-  changing the host's mixer faders.
+| MIDI Control App | Audio Crossfader VST3 |
+| --- | --- |
+| Turns one incoming MIDI CC into multiple independently shaped CC outputs. | Links one Controller instance to multiple audio Target instances. |
+| Controls levels, filters, sends, effects, and other MIDI-learnable parameters. | Applies smoothed audio gain while leaving the host's mixer faders untouched. |
+| Works with Maschine 3, Ableton Live, and other macOS software that supports MIDI Learn. | Works with Maschine 3, Ableton Live, and other compatible macOS VST3 hosts. |
 
-> **Maschine+ support:** Maschine+ provides the hardware control while Maschine
-> 3 and MK Crossfader run on the Mac. Neither tool can be installed or loaded
-> inside Maschine+ in standalone mode.
+The installer includes both components. They can be used separately, and any
+MIDI controller that sends an assignable MIDI CC can provide the physical
+control.
 
-Both tools have also been manually verified in Ableton Live. The native app can
-control several Live parameters from one hardware movement, while the VST3 can
-crossfade several Live audio tracks without moving their mixer faders. The app
-does not require Max for Live.
+> [!IMPORTANT]
+> Maschine+ is supported as hardware in **Controller mode** while Maschine 3 and
+> MK Crossfader run on the Mac. Neither component can be installed or loaded on
+> Maschine+ in standalone mode.
 
-The app and VST3 do not depend on each other. The installer includes both, but
-either can be used on its own. Any MIDI controller that sends an assignable
-MIDI CC can provide the physical control.
+## Choose A Workflow
 
-Created by [Mike Konstantinidis](https://konstantinidis.net/) while building his
-own live set, then released as an open-source project for the community.
+| What You Want To Do | Use |
+| --- | --- |
+| Move several mapped levels, filters, sends, or effects from one hardware control | **MIDI Control App** |
+| Build custom parameter movements with individual ranges and curves | **MIDI Control App** |
+| Avoid inserting a plug-in on every destination | **MIDI Control App** |
+| Crossfade several audio paths without moving their mixer faders | **Audio Crossfader VST3** |
+| Keep an exact plug-in unity state at 0.0 dB | **Audio Crossfader VST3** |
 
-> **Binary releases:** Developer ID signed and Apple-notarised installers are
-> distributed only through the
-> [Releases page](https://github.com/mks-devx/MK-Crossfader/releases). No
-> unsigned public binaries are distributed from this repository.
+Use one workflow for each crossfader system. Combining them is possible when
+each has a separate, deliberate role.
 
-## Ableton Live
+## MIDI Control App
 
-Both products work in Ableton Live, but they solve different problems.
+The native macOS app receives one MIDI CC and sends a separate CC for every
+configured target through its virtual **MK Crossfader** MIDI port. Each target
+can follow side A, side B, or a custom range.
 
-### MIDI Multi-Control
-
-The native app receives one MIDI CC from the hardware controller and sends one
-separate CC for every configured target through its virtual **MK Crossfader**
-MIDI input. Live can map those outputs to different parameters.
-
-For example, moving one physical fader can simultaneously:
-
-- open an Auto Filter through a restricted range;
-- increase a reverb send;
-- reduce delay feedback in the opposite direction; and
-- trim Utility Gain to keep the transition controlled.
-
-Use **Parameter** targets in **Range** mode, then set each target's Left, Right,
-Shape, and Return Value independently. This works well for performance
-transitions, effect builds, and repeatable sound-design movements without
-creating a Max for Live device.
-
-Ableton stores the MIDI mappings inside the Live Set. The app does not inspect
-the Set or read parameter values back from Live, so Return Value is a value you
-configure rather than the parameter's previously stored value.
-
-See the [Ableton Live setup guide](docs/ABLETON_SETUP.md) for the complete
-example and routing steps.
-
-### VST3 Audio Crossfading
-
-Place one VST3 Controller on Live's Master track and a Target after the audio
-source or effects on every track that should fade. The Targets follow the same
-crossfader while Live's mixer faders remain untouched. The app is not required
-for this workflow.
-
-The same [Ableton Live setup guide](docs/ABLETON_SETUP.md) covers the Controller
-and Target routing.
-
-## App Preview
+In Ableton Live, one movement can open an Auto Filter through a restricted
+range, raise a reverb send, reduce delay feedback in the opposite direction,
+and trim Utility Gain. Live stores the MIDI mappings in the Live Set; the app
+does not inspect the Set or read parameter values back from Live.
 
 <p align="center">
   <img src="docs/images/mk-midi-crossfader-app.png" width="820" alt="MK MIDI Crossfader showing controller mapping, targets, and crossfade controls">
 </p>
 
-## VST3 Preview
+## Audio Crossfader VST3
 
-<p align="center">
-  <strong>Controller</strong><br>
-  <img src="docs/images/mk-crossfader-vst3.png" width="820" alt="MK Crossfader VST3 Controller showing crossfade modes and target routes in Maschine 3">
-</p>
+One Controller publishes the crossfader state. Target instances receive that
+state and apply local smoothed gain to the audio passing through them. This
+keeps the host's mixer faders where you set them and lets effects placed before
+each Target remain part of the sound.
 
-<p align="center">
-  <strong>Target</strong><br>
-  <img src="docs/images/mk-crossfader-vst3-target.png" width="820" alt="MK Crossfader VST3 Target showing its linked session, target slot, connection state, and current gain">
-</p>
+<table>
+  <tr>
+    <td width="50%" align="center"><strong>Controller</strong></td>
+    <td width="50%" align="center"><strong>Target</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/mk-crossfader-vst3.png" alt="MK Crossfader VST3 Controller showing crossfade modes and target routes"></td>
+    <td><img src="docs/images/mk-crossfader-vst3-target.png" alt="MK Crossfader VST3 Target showing its session, target slot, connection state, and gain"></td>
+  </tr>
+</table>
 
-## Choose A Workflow
+Each Target is an audio effect. It works with samples, loops, software
+instruments, and live input, but it cannot process MIDI or create sound on a
+silent channel. A Controller on the Master or Main track distributes control
+data without fading that track's audio.
 
-| Need | MIDI app | VST3 |
-| --- | --- | --- |
-| Crossfade without inserting a plug-in on every target | Yes | No |
-| Keep host mixer faders untouched | No | Yes |
-| Control filters, sends, or other learned parameters | Yes | No |
-| Control several Ableton parameters from one hardware fader | Yes | No |
-| Crossfade several Ableton audio tracks without moving mixer faders | No | Yes |
-| Requires the other MK Crossfader product | No | No |
-| Exact plug-in unity at 0.0 dB | No | Yes |
+## Download And Install
 
-Use one workflow per crossfader system. Combining them is possible, but only
-makes sense when each has a separate job.
+Download the current Developer ID signed and Apple-notarised installer from the
+**[Releases page](https://github.com/mks-devx/MK-Crossfader/releases/latest)**.
+No unsigned public binaries are distributed from this repository.
+
+The package installs:
+
+- **MK MIDI Crossfader** in `/Applications`
+- **MK Crossfader VST3** in `/Library/Audio/Plug-Ins/VST3`
+- the setup manual in `/Library/Application Support/MK Crossfader`
+
+Close Maschine 3, Ableton Live, and other plug-in hosts before installation.
+Follow the [installation guide](docs/INSTALLATION.md) for the complete process.
 
 ## Quick Start
 
-For the VST3 with Maschine 3:
+### VST3 With Maschine 3
 
-1. Add one MK Crossfader instance to Master and set it to **Controller**.
-2. Map its Crossfader parameter to your physical fader through Maschine.
-3. Add a **Target** instance after the effects on every Group or Sound you want
-   to control.
-4. Give each Target a unique slot in the same session.
-5. Assign those routes to A, B, or Off in the Controller.
+1. Add MK Crossfader to Master and set its role to **Controller**.
+2. Map the Crossfader parameter to the physical fader through Maschine 3.
+3. Add a **Target** after the effects on every Group or Sound that should fade.
+4. Keep all instances in the same session and give every Target a unique slot.
+5. Assign each route to A, B, or Off in the Controller.
 
-The same VST3 structure works in Ableton Live: place the Controller on Master,
-place Targets after the audio source or effects on the tracks you want to fade,
-and keep every instance in the same session with a unique Target slot.
+The same structure works in Ableton Live: put the Controller on Master or Main,
+then put a Target after the instrument, sample player, or effects on every audio
+path that should join the crossfade.
 
-Each Target is an audio effect and only changes audio that passes through that
-instance. It works with samples, loops, software instruments, and live audio;
-it does not process MIDI or create sound on an empty channel. The Master
-Controller sends crossfader control data but does not fade the Master output.
+### MIDI Multi-Mapping
 
-For the MIDI app with Maschine 3:
-
-1. Start MK MIDI Crossfader before Maschine 3.
-2. Enable its virtual **MK Crossfader** MIDI input in Maschine 3.
-3. Add a target, put the matching Maschine 3 parameter into MIDI Learn, and press
-   **Send Learn**.
-4. Assign the target to A, B, Range, or Off.
-
-For the MIDI app with Ableton Live or other MIDI Learn software:
-
-1. Start MK MIDI Crossfader and select the physical MIDI controller.
-2. Enable the virtual **MK Crossfader** input for MIDI mapping in the
-   destination software.
-3. Add a **Parameter** target, activate MIDI Learn on the destination
-   parameter, and press **Send Learn**.
-4. Repeat for additional parameters, then assign each target to A, B, Range, or
-   Off.
+1. Open MK MIDI Crossfader and select the physical MIDI controller.
+2. Enable the virtual **MK Crossfader** port for MIDI mapping in the destination.
+3. Add a **Parameter** target and activate MIDI Learn on the destination control.
+4. Press **Send Learn**, then repeat for the remaining parameters.
+5. Assign each target to A, B, Range, or Off and configure its movement.
 
 In Ableton Live, enable **Remote** for the **MK Crossfader** input under
-**Settings > Link, Tempo & MIDI**, then use Live's MIDI Map mode for each
-destination. The complete process is documented in the
-[Ableton Live setup guide](docs/ABLETON_SETUP.md).
+**Settings > Link, Tempo & MIDI**. The app does not require Max for Live.
 
-The destination must expose the parameter to MIDI Learn. The app does not scan
-other software, control arbitrary plug-in parameters directly, or rewrite host
-routing.
+## Compatibility
 
-The app appears in both the Dock and menu bar by default. Disable **Show in
-Dock** under **Advanced** to keep it available only from the menu bar. Enable
-**Launch at Login** there to start it automatically when signing in to macOS.
+| Component | Requirement | Primary Use |
+| --- | --- | --- |
+| MK MIDI Crossfader | macOS 14 or later; CoreMIDI destination with MIDI Learn | Maschine 3, Ableton Live, and other MIDI-learnable macOS software |
+| MK Crossfader VST3 | macOS 13 or later; compatible VST3 host | Maschine 3, Ableton Live, and other macOS VST3 hosts |
+| Hardware control | Assignable MIDI CC | Maschine+ in Controller mode or another MIDI controller |
 
-See [Maschine setup](docs/MASCHINE_SETUP.md) for the complete routing and
-recovery workflow.
+The Maschine-calibrated **Level** target requires Maschine 3. General
+**Parameter** targets can be used with other destinations that expose controls
+through MIDI Learn. This project does not add Maschine 3 support for legacy
+hardware that Native Instruments no longer supports.
 
-## Requirements
+## Live Use
 
-- macOS 14 or later for MK MIDI Crossfader
-- macOS 13 or later and a VST3 host for MK Crossfader VST3
-- A destination that accepts virtual CoreMIDI input and MIDI Learn for general
-  native-app use
-- Maschine 3 desktop software for the primary Maschine workflow and the
-  Maschine-calibrated Level target
-- Xcode command-line tools and CMake 3.22 or later to build from source
+Treat MK Crossfader as performance software, not as a replacement for a
+recoverable mix state. Before a show, test the exact project, controller, USB
+path, host version, and recovery procedure you intend to use.
 
-These tools run on the Mac. Maschine+ can be used in **Controller mode** with
-Maschine 3 running on the Mac, but neither tool can be loaded or run inside
-Maschine+ in standalone mode.
+- Keep a manual unity or neutral recovery control available.
+- The MIDI app cannot send configured Return Values after a crash, forced quit,
+  or power loss.
+- A VST3 Target that loses its Controller holds its last valid gain.
 
-The native app can receive an assignable MIDI CC from any controller visible to
-macOS. This does not add Maschine 3 integration for legacy hardware that Native
-Instruments does not support, including Maschine/Maschine Mikro MK1 and MK2.
+## Documentation
+
+| Guide | Contents |
+| --- | --- |
+| [Installation](docs/INSTALLATION.md) | Signed package installation, locations, and removal |
+| [Maschine Setup](docs/MASCHINE_SETUP.md) | Controller/Target routing, MIDI Learn, and recovery |
+| [Ableton Live Setup](docs/ABLETON_SETUP.md) | MIDI multi-control and VST3 audio crossfading |
+| [Architecture](docs/ARCHITECTURE.md) | Component boundaries, communication, and failure behaviour |
+| [Privacy](docs/PRIVACY.md) | Local data, update checks, and network behaviour |
+| [Building](docs/BUILDING.md) | Source builds and development requirements |
+| [Support](SUPPORT.md) | Public support policy and bug-report requirements |
 
 ## Build And Test
+
+Building from source requires Xcode command-line tools and CMake 3.22 or later.
+Run the complete local verification suite with:
 
 ```zsh
 ./scripts/verify-all.sh
 ```
 
-The script builds and tests both products without installing them. JUCE 8.0.15
-is fetched automatically for the VST3 unless `JUCE_SOURCE_DIR` points to an
-existing checkout.
-
-See [Building](docs/BUILDING.md) and [Installation](docs/INSTALLATION.md) for
-individual commands and output locations.
-
-## Live Use
-
-Treat this as performance software, not a replacement for a recoverable mix
-state. Test the exact project, controller, USB path, and host version before a
-show. Keep a manual unity or neutral recovery control available. After a crash,
-forced termination, or power loss, the app cannot send Return Values. A VST3
-Target that loses its Controller holds its last valid gain.
-
-More detail is available in [Architecture](docs/ARCHITECTURE.md) and
-[Privacy](docs/PRIVACY.md).
+This builds and tests both components without installing them. The VST3 build
+uses JUCE 8.0.15, fetched automatically unless `JUCE_SOURCE_DIR` points to a
+local checkout. Every push and pull request also runs the macOS app tests, VST3
+tests, universal build checks, and public-history privacy audit in GitHub
+Actions.
 
 ## Support And Updates
 
-Setup help and bug reports are handled publicly through GitHub so that answers
-remain searchable and useful to everyone. Please do not contact Mike through
-Instagram, email, or other private channels for setup instructions,
-troubleshooting, or individual bug fixes.
+Use [GitHub Issues](https://github.com/mks-devx/MK-Crossfader/issues) for setup
+questions and reproducible bug reports so the answers remain public and
+searchable. Please do not contact Mike through Instagram, email, or other
+private channels for individual setup or troubleshooting.
 
-Support is provided on a best-effort basis. Check the GitHub repository and its
-Releases page for updates, or use the macOS app's manual **Check for Updates**
-command. It never checks, downloads, or installs in the background; the VST3
-remains completely offline. Read the complete [support policy](SUPPORT.md)
-before reporting a problem.
+Support is provided on a best-effort basis. Check the
+[Releases page](https://github.com/mks-devx/MK-Crossfader/releases) or use the
+macOS app's manual **Check for Updates** command. The app never checks,
+downloads, or installs updates in the background, and the VST3 remains offline.
 
-## Contributing
+## Project
 
-Bug reports and focused pull requests are welcome. Read
-[CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes. Security issues
-should follow [SECURITY.md](SECURITY.md).
+Created by [Mike Konstantinidis](https://konstantinidis.net/) while building his
+own live set, then released as an open-source project for the community.
 
-## Licence
+- Contributions: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security reports: [SECURITY.md](SECURITY.md)
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Licence: [GNU Affero General Public License v3.0](LICENSE)
+- Third-party notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
-MK Crossfader is released under the
-[GNU Affero General Public License v3.0](LICENSE). The VST3 uses JUCE 8.0.15
-under JUCE's AGPLv3 option. See [third-party notices](THIRD_PARTY_NOTICES.md).
-
-Product names are used only to describe compatibility and workflow. This
-project is independent and is not affiliated with or endorsed by the
-manufacturers mentioned in the documentation. See [TRADEMARKS.md](TRADEMARKS.md).
+Product names are used only to describe compatibility and workflow. MK
+Crossfader is independent and is not affiliated with or endorsed by the
+manufacturers mentioned in the documentation. See
+[TRADEMARKS.md](TRADEMARKS.md).
