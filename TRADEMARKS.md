@@ -1,6 +1,6 @@
 # Trademarks
 
-Maschine, Maschine+, Akai Force, Octatrack, macOS, VST, and other product names
+Maschine, Maschine+, macOS, VST, and other product names
 or marks belong to their respective owners.
 
 Names are used only to identify compatibility, routing, or workflow references.

@@ -14,7 +14,8 @@ SOURCE_PATTERN='(/Users/[^/[:space:]]+/|/Volumes/|-----BEGIN [A-Z ]*PRIVATE KEY-
 
 print "== Tracked source privacy scan =="
 if git -C "$ROOT" grep -nI -E "$SOURCE_PATTERN" -- . \
-    ':(exclude)scripts/audit-release.sh'; then
+    ':(exclude)scripts/audit-release.sh' \
+    ':(exclude)scripts/privacy-audit.sh'; then
     print -u2 "Private data was found in tracked source."
     exit 1
 fi
@@ -66,9 +67,21 @@ if rg -n "$SOURCE_PATTERN" "$STRINGS_FILE"; then
 fi
 print "== Project network-call scan =="
 NETWORK_SOURCE_PATTERN='juce::(URL|WebInputStream|StreamingSocket|DatagramSocket|WebBrowserComponent|InterprocessConnection|InterprocessConnectionServer)|URLSession|NSURLConnection|CFNetwork|Network\.framework|::(socket|connect|recv|sendto)[[:space:]]*\('
-if rg -n "$NETWORK_SOURCE_PATTERN" \
-    "$ROOT/macos-app/Sources" "$ROOT/vst3/src"; then
+if rg -n "$NETWORK_SOURCE_PATTERN" "$ROOT/vst3/src"; then
+    print -u2 "Unexpected network API usage was found in the VST3 source."
+    exit 1
+fi
+if rg -n "$NETWORK_SOURCE_PATTERN" "$ROOT/macos-app/Sources" \
+    --glob '!AppUpdateChecker.swift'; then
     print -u2 "Unexpected network API usage was found in project source."
+    exit 1
+fi
+UPDATE_CHECKER="$ROOT/macos-app/Sources/MKMIDICrossfader/AppUpdateChecker.swift"
+EXPECTED_APP_NETWORK_URLS=$'https://api.github.com/repos/mks-devx/MK-Crossfader/releases/latest\nhttps://github.com/mks-devx/MK-Crossfader/releases'
+ACTUAL_APP_NETWORK_URLS="$(rg -o 'https?://[^\"]+' "$UPDATE_CHECKER" \
+    | LC_ALL=C sort -u)"
+if [[ "$ACTUAL_APP_NETWORK_URLS" != "$EXPECTED_APP_NETWORK_URLS" ]]; then
+    print -u2 "The manual update checker is not limited to the expected GitHub endpoints."
     exit 1
 fi
 if ! rg -q 'JUCE_WEB_BROWSER=0' "$ROOT/vst3/CMakeLists.txt" \

@@ -69,8 +69,8 @@ func freshRangeDefaults() {
     #expect(target.customRightPercent == 100)
 }
 
-@Test("Akai Force preset restores A/B mixing without changing parameters")
-func akaiForcePreset() {
+@Test("Performance A/B preset restores A/B mixing without changing parameters")
+func performanceABPreset() {
     let targets = [
         CrossfadeTarget(
             name: "Group A",
@@ -92,7 +92,7 @@ func akaiForcePreset() {
         CrossfadeTarget(name: "Off", controller: 113, side: .off),
     ]
 
-    let result = BuiltInCrossfadePreset.akaiForce.applying(to: targets)
+    let result = BuiltInCrossfadePreset.performanceAB.applying(to: targets)
 
     #expect(result[0].behavior == .sideA)
     #expect(result[0].customLeftPercent == 82)
@@ -103,18 +103,18 @@ func akaiForcePreset() {
     #expect(result[2].behavior == .off)
     #expect(result.map(\.controller) == [110, 112, 113])
     #expect(result.map(\.name) == ["Group A", "Filter", "Off"])
-    #expect(BuiltInCrossfadePreset.akaiForce.curve == .fullCentre)
+    #expect(BuiltInCrossfadePreset.performanceAB.curve == .fullCentre)
 }
 
-@Test("Octatrack preset morphs every active target using stored endpoints")
-func octatrackPreset() {
+@Test("Scene Morph preset morphs every active target using stored endpoints")
+func sceneMorphPreset() {
     let targets = [
         CrossfadeTarget(name: "A", controller: 110, side: .a),
         CrossfadeTarget(name: "B", controller: 111, side: .b),
         CrossfadeTarget(name: "Off", controller: 112, side: .off),
     ]
 
-    let result = BuiltInCrossfadePreset.octatrack.applying(to: targets)
+    let result = BuiltInCrossfadePreset.sceneMorph.applying(to: targets)
 
     #expect(result[0].behavior == .range)
     #expect(result[0].customLeftPercent == 100)
@@ -123,7 +123,7 @@ func octatrackPreset() {
     #expect(result[1].customLeftPercent == 0)
     #expect(result[1].customRightPercent == 100)
     #expect(result[2].behavior == .off)
-    #expect(BuiltInCrossfadePreset.octatrack.curve == .smooth)
+    #expect(BuiltInCrossfadePreset.sceneMorph.curve == .smooth)
 }
 
 @Test("Target initializer clamps every percentage")

@@ -1,7 +1,7 @@
 # Privacy
 
-MK Crossfader has no analytics, telemetry, accounts, advertising, update
-service, or network communication.
+MK Crossfader has no analytics, telemetry, accounts, advertising, background
+update service, or automatic network communication.
 
 ## MK MIDI Crossfader
 
@@ -11,6 +11,13 @@ colours, and MIDI assignments are stored locally in macOS user defaults under
 the app's bundle identifier. Nothing is uploaded.
 
 The app does not record or transmit audio.
+
+The app accesses the network only when the user selects **Check for Updates**.
+That action sends an HTTPS request to GitHub's public Releases API containing a
+standard app name and version user-agent. It does not send MIDI data, audio,
+settings, target names, controller details, or a persistent identifier. GitHub
+receives normal connection metadata such as the user's IP address. The app does
+not check in the background or automatically download or install anything.
 
 If **Launch at Login** is enabled, the app registers itself with macOS through
 `SMAppService`. It does not install a helper process, background daemon, or
@@ -25,7 +32,8 @@ values through per-user shared memory on the same Mac. That shared memory is
 not a network service and is not used after the processes stop.
 
 The plug-in processes audio in memory and does not write recordings or sample
-content to disk.
+content to disk. The VST3 never checks for updates and does not access the
+network.
 
 ## Repository
 

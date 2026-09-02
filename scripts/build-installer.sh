@@ -50,6 +50,7 @@ lipo "$PLUGIN_BINARY" -verify_arch arm64 x86_64
 
 APP_SIGNING_IDENTITY="${APP_SIGNING_IDENTITY:-}"
 INSTALLER_SIGNING_IDENTITY="${INSTALLER_SIGNING_IDENTITY:-}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 if [[ -n "$APP_SIGNING_IDENTITY" || -n "$INSTALLER_SIGNING_IDENTITY" ]]; then
     if [[ -z "$APP_SIGNING_IDENTITY" || -z "$INSTALLER_SIGNING_IDENTITY" ]]; then
         print -u2 "Both signing identities are required for a distributable installer."
@@ -59,6 +60,10 @@ if [[ -n "$APP_SIGNING_IDENTITY" || -n "$INSTALLER_SIGNING_IDENTITY" ]]; then
         --sign "$APP_SIGNING_IDENTITY" "$APP"
     codesign --force --deep --options runtime --timestamp \
         --sign "$APP_SIGNING_IDENTITY" "$PLUGIN"
+fi
+if [[ -n "$NOTARY_PROFILE" && -z "$INSTALLER_SIGNING_IDENTITY" ]]; then
+    print -u2 "Notarisation requires Developer ID signed app, VST3, and installer."
+    exit 1
 fi
 
 codesign --verify --deep --strict --verbose=2 "$APP"
@@ -157,6 +162,7 @@ if [[ -n "$INSTALLER_SIGNING_IDENTITY" ]]; then
     OUTPUT_NAME="MK-Crossfader-$VERSION.pkg"
     productsign --sign "$INSTALLER_SIGNING_IDENTITY" \
         "$UNSIGNED_PACKAGE" "$DIST_DIR/$OUTPUT_NAME"
+    pkgutil --check-signature "$DIST_DIR/$OUTPUT_NAME"
 else
     OUTPUT_NAME="MK-Crossfader-$VERSION-local-test.pkg"
     cp "$UNSIGNED_PACKAGE" "$DIST_DIR/$OUTPUT_NAME"
@@ -164,6 +170,32 @@ else
 fi
 
 xattr -c "$DIST_DIR/$OUTPUT_NAME" 2>/dev/null || true
+
+if [[ -n "$NOTARY_PROFILE" ]]; then
+    for tool in spctl xcrun; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            print -u2 "Required notarisation tool not found: $tool"
+            exit 1
+        fi
+    done
+
+    NOTARY_RESULT="$DIST_DIR/MK-Crossfader-$VERSION-notary-result.json"
+    xcrun notarytool submit "$DIST_DIR/$OUTPUT_NAME" \
+        --keychain-profile "$NOTARY_PROFILE" \
+        --wait --output-format json > "$NOTARY_RESULT"
+    NOTARY_STATUS="$(plutil -extract status raw -o - "$NOTARY_RESULT")"
+    if [[ "$NOTARY_STATUS" != "Accepted" ]]; then
+        print -u2 "Apple notarisation did not accept the installer: $NOTARY_STATUS"
+        exit 1
+    fi
+
+    xcrun stapler staple "$DIST_DIR/$OUTPUT_NAME"
+    xcrun stapler validate "$DIST_DIR/$OUTPUT_NAME"
+    spctl --assess --type install --verbose=2 "$DIST_DIR/$OUTPUT_NAME"
+elif [[ -n "$INSTALLER_SIGNING_IDENTITY" ]]; then
+    print -u2 "The installer is signed but not notarised because NOTARY_PROFILE is empty."
+fi
+
 "$ROOT/scripts/audit-release.sh" "$DIST_DIR/$OUTPUT_NAME"
 
 (
@@ -173,3 +205,6 @@ xattr -c "$DIST_DIR/$OUTPUT_NAME" 2>/dev/null || true
 
 print "$DIST_DIR/$OUTPUT_NAME"
 print "$DIST_DIR/$OUTPUT_NAME.sha256"
+if [[ -n "$NOTARY_PROFILE" ]]; then
+    print "$NOTARY_RESULT"
+fi

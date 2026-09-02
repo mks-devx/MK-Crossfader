@@ -14,6 +14,17 @@ Scene gives every route explicit left and right endpoint gains.
 
 Targets use 15 ms gain smoothing and do not move host mixer faders.
 
+## Audio Requirement
+
+Each Target is an audio effect. It changes only the audio signal passing
+through that plug-in instance, so it must be inserted after the sample player,
+loop, software instrument, or live input that produces the sound. It does not
+process MIDI and cannot make an empty or silent channel audible. Samples do not
+need to be loaded specifically; any audio source is supported.
+
+The Controller sends crossfader state to linked Targets. When placed on Master,
+it passes the Master audio unchanged and does not act as a master-volume fader.
+
 ## Maschine Routing
 
 1. Put one Controller on Master.

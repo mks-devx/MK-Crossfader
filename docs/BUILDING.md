@@ -57,11 +57,14 @@ A distributable build requires both signing identities:
 ```zsh
 APP_SIGNING_IDENTITY="Developer ID Application: ..." \
 INSTALLER_SIGNING_IDENTITY="Developer ID Installer: ..." \
+NOTARY_PROFILE="private-keychain-profile" \
 ./scripts/build-installer.sh
 ```
 
-The signed package must still be notarised and tested after download on a clean
-Mac before publication.
+With all three values supplied, the script requires Apple to accept the
+submission, staples the notarisation ticket, validates the package with
+Gatekeeper, audits the final payload, and then writes its checksum. Keep these
+values in a private environment outside the repository.
 
 ## VST3 Only
 

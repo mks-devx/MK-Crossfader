@@ -2,25 +2,25 @@ import CrossfaderCore
 import Foundation
 
 enum BuiltInCrossfadePreset: String, CaseIterable, Identifiable {
-    case akaiForce
-    case octatrack
+    case performanceAB
+    case sceneMorph
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .akaiForce:
-            return "Akai Force - A/B Mix"
-        case .octatrack:
-            return "Octatrack - Scene Morph"
+        case .performanceAB:
+            return "Performance A/B"
+        case .sceneMorph:
+            return "Scene Morph"
         }
     }
 
     var helpText: String {
         switch self {
-        case .akaiForce:
+        case .performanceAB:
             return "Classic A/B mixing for Level targets. Parameter ranges are preserved."
-        case .octatrack:
+        case .sceneMorph:
             return "Morph every active target between its stored Left and Right values."
         }
     }
@@ -31,9 +31,9 @@ enum BuiltInCrossfadePreset: String, CaseIterable, Identifiable {
 
     var curve: CrossfadeCurve {
         switch self {
-        case .akaiForce:
+        case .performanceAB:
             return .fullCentre
-        case .octatrack:
+        case .sceneMorph:
             return .smooth
         }
     }
@@ -50,11 +50,11 @@ enum BuiltInCrossfadePreset: String, CaseIterable, Identifiable {
             }
 
             switch self {
-            case .akaiForce:
+            case .performanceAB:
                 if updated.kind != .customMIDI {
                     updated.transition = .crossfade
                 }
-            case .octatrack:
+            case .sceneMorph:
                 updated.transition = .range
             }
             return updated

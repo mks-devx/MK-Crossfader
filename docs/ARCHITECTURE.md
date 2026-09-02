@@ -36,7 +36,8 @@ casually.
 
 The VST3 changes only its own gain. It does not move Maschine mixer faders.
 Effects placed after a Target can continue producing tails after that Target is
-closed.
+closed. A Target processes audio, not MIDI, and has no audible effect unless an
+audio signal passes through its plug-in instance.
 
 ## Product Boundary
 
@@ -44,7 +45,8 @@ closed.
 - App presets cannot configure VST3 instances.
 - VST3 sessions are not visible to the app.
 - Neither product rewrites Maschine routing.
-- Neither product runs on Maschine+ standalone.
+- Both products run on the Mac. Maschine+ can control Maschine 3 on the Mac in
+  Controller mode, but neither product runs inside Maschine+ standalone.
 - AU is not currently built or supported.
 
 The app retains settings migration for its older target type so existing local

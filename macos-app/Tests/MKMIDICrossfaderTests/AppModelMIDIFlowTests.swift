@@ -231,7 +231,7 @@ func pausedPresetLoadingIsSilent() throws {
     #expect(engine.sentMessages.isEmpty)
     #expect(model.targets.map(\.name) == ["Saved A"])
 
-    model.applyBuiltInPreset(.octatrack)
+    model.applyBuiltInPreset(.sceneMorph)
     #expect(engine.sentMessages.isEmpty)
     #expect(model.targets[0].behavior == .range)
 }

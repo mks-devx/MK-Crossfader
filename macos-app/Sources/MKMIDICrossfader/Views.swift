@@ -5,6 +5,7 @@ import SwiftUI
 
 struct MenuBarContent: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var updateChecker: AppUpdateChecker
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -29,6 +30,22 @@ struct MenuBarContent: View {
             Label("Settings", systemImage: "gearshape")
         }
         .keyboardShortcut(",")
+
+        Button {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            openWindow(id: "settings")
+            Task {
+                await updateChecker.checkForUpdates()
+            }
+        } label: {
+            Label(
+                updateChecker.state.isChecking
+                    ? "Checking for Updates"
+                    : "Check for Updates",
+                systemImage: "arrow.triangle.2.circlepath"
+            )
+        }
+        .disabled(updateChecker.state.isChecking)
 
         Divider()
 
@@ -56,6 +73,7 @@ private enum PresetSelection: Hashable {
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var updateChecker: AppUpdateChecker
     @AppStorage(AppActivationPolicy.showDockIconDefaultsKey)
     private var showDockIcon = true
     @StateObject private var launchAtLogin = LaunchAtLoginController()
@@ -64,6 +82,7 @@ struct SettingsView: View {
     @State private var showsSavePresetAlert = false
     @State private var presetName = ""
     @State private var presetPendingDeletion: UUID?
+    @State private var showsUpdateResult = false
 
     var body: some View {
         ScrollView {
@@ -167,6 +186,8 @@ struct SettingsView: View {
                         .font(.headline)
                 }
 
+                updateStatus
+
                 HStack(spacing: 3) {
                     Text("Made by")
                     Link(
@@ -191,6 +212,11 @@ struct SettingsView: View {
         }
         .onChange(of: showDockIcon) { _, isVisible in
             AppActivationPolicy.apply(showDockIcon: isVisible)
+        }
+        .onChange(of: updateChecker.state) { previous, current in
+            if previous.isChecking && !current.isChecking {
+                showsUpdateResult = true
+            }
         }
         .alert("Save Preset", isPresented: $showsSavePresetAlert) {
             TextField("Preset name", text: $presetName)
@@ -231,6 +257,80 @@ struct SettingsView: View {
             }
         } message: {
             Text("The saved preset will be removed permanently.")
+        }
+        .alert(updateResultTitle, isPresented: $showsUpdateResult) {
+            Button(
+                updateChecker.state.releaseURL == nil
+                    ? "Open Releases"
+                    : "View Release"
+            ) {
+                NSWorkspace.shared.open(
+                    updateChecker.state.releaseURL
+                        ?? AppUpdateChecker.releasesPageURL
+                )
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(updateResultMessage)
+        }
+    }
+
+    private var updateStatus: some View {
+        HStack(spacing: 10) {
+            Label(
+                updateChecker.state.statusText,
+                systemImage: updateChecker.state.systemImage
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Spacer()
+
+            if let releaseURL = updateChecker.state.releaseURL {
+                Link("View Release", destination: releaseURL)
+                    .font(.caption)
+            }
+
+            Button {
+                Task {
+                    await updateChecker.checkForUpdates()
+                }
+            } label: {
+                Label("Check for Updates", systemImage: "arrow.triangle.2.circlepath")
+            }
+            .controlSize(.small)
+            .disabled(updateChecker.state.isChecking)
+            .help("Check the official GitHub Releases page")
+        }
+    }
+
+    private var updateResultTitle: String {
+        switch updateChecker.state {
+        case .upToDate:
+            return "MK Crossfader Is Up to Date"
+        case .updateAvailable:
+            return "MK Crossfader Update Available"
+        case .noPublishedRelease:
+            return "No Public Release Yet"
+        case .failed:
+            return "Update Check Failed"
+        case .idle, .checking:
+            return "Check for Updates"
+        }
+    }
+
+    private var updateResultMessage: String {
+        switch updateChecker.state {
+        case .upToDate(let current):
+            return "You are using the latest public version, \(current)."
+        case .updateAvailable(let current, let latest, _):
+            return "Version \(latest) is available. You are using \(current)."
+        case .noPublishedRelease(let current):
+            return "No public GitHub Release has been published yet. You are using version \(current)."
+        case .failed:
+            return "The app could not reach GitHub. Check your internet connection and try again."
+        case .idle, .checking:
+            return updateChecker.state.statusText
         }
     }
 

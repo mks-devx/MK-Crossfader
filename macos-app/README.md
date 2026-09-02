@@ -12,16 +12,17 @@ parameters.
 - Per-target Range morphing with independent endpoints and shape
 - Up to 128 MIDI-learned targets
 - Up to 16 complete user presets
-- Workflow-inspired Akai Force A/B Mix and Octatrack Scene Morph starting points
+- Performance A/B and Scene Morph starting points
 - Restore & Pause, startup pause, target uniqueness checks, and controller
   hot-plug refresh
 - Dock and app-switcher presence that can be disabled under **Advanced** while
   keeping the menu-bar control available
 - Optional **Launch at Login** registration through macOS Service Management;
   no helper process or background daemon is installed
+- Manual GitHub release checking with no background checks, automatic download,
+  or automatic installation
 
-The named hardware presets are workflow starting points, not hardware
-emulations.
+The built-in presets are workflow starting points and do not emulate hardware.
 
 ## Target Types
 

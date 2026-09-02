@@ -69,6 +69,11 @@ For the independent VST3:
 4. Give each Target a unique slot in the same session.
 5. Assign those routes to A, B, or Off in the Controller.
 
+Each Target is an audio effect and only changes audio that passes through that
+instance. It works with samples, loops, software instruments, and live audio;
+it does not process MIDI or create sound on an empty channel. The Master
+Controller sends crossfader control data but does not fade the Master output.
+
 For the MIDI app:
 
 1. Start MK MIDI Crossfader before Maschine.
@@ -91,7 +96,13 @@ recovery workflow.
 - Maschine 3 desktop software for the documented workflow
 - Xcode command-line tools and CMake 3.22 or later to build from source
 
-These tools do not run on Maschine+ in standalone mode.
+These tools run on the Mac. Maschine+ can be used in **Controller mode** with
+Maschine 3 running on the Mac, but neither tool can be loaded or run inside
+Maschine+ in standalone mode.
+
+The native app can receive an assignable MIDI CC from any controller visible to
+macOS. This does not add Maschine 3 integration for legacy hardware that Native
+Instruments does not support, including Maschine/Maschine Mikro MK1 and MK2.
 
 ## Build And Test
 
@@ -115,6 +126,19 @@ termination, or power loss cannot restore the last MIDI-controlled value.
 
 More detail is available in [Architecture](docs/ARCHITECTURE.md) and
 [Privacy](docs/PRIVACY.md).
+
+## Support And Updates
+
+Setup help and bug reports are handled publicly through GitHub so that answers
+remain searchable and useful to everyone. Please do not contact Mike through
+Instagram, email, or other private channels for setup instructions,
+troubleshooting, or individual bug fixes.
+
+Support is provided on a best-effort basis. Check the GitHub repository and its
+Releases page for updates, or use the macOS app's manual **Check for Updates**
+command. It never checks, downloads, or installs in the background; the VST3
+remains completely offline. Read the complete [support policy](SUPPORT.md)
+before reporting a problem.
 
 ## Contributing
 

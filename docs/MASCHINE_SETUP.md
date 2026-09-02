@@ -3,6 +3,16 @@
 Both workflows work with any MIDI controller that sends a standard, assignable
 MIDI CC. No specific controller model is required.
 
+MK Crossfader itself runs on the Mac. Maschine+ is supported as a controller
+for Maschine 3 desktop software: switch Maschine+ to **Controller mode** and
+keep the app or VST3 on the Mac. Neither product can be installed or loaded
+inside Maschine+ in standalone mode.
+
+Native Instruments does not support Maschine/Maschine Mikro MK1 or MK2 as
+integrated controllers for Maschine 3. A device that can independently send a
+standard MIDI CC may still drive the native app, but that is generic MIDI use,
+not Maschine 3 hardware integration.
+
 ## Independent VST3
 
 1. Add MK Crossfader to Master and set `Role` to `Controller`.
@@ -20,6 +30,11 @@ MIDI CC. No specific controller model is required.
 The Master instance is a controller only; it does not fade the complete master
 signal. Target instances apply gain locally while Maschine's mixer values stay
 unchanged.
+
+A Target works only when audio passes through its insert. That audio can come
+from a loaded sample, loop, software instrument, or live input; the VST3 is not
+limited to samples. It does not process MIDI or generate sound for an empty
+Sound or Group.
 
 Put a Target after the insert effects that should be included in its fade.
 Effects or sends downstream of the Target may continue producing tails. A
