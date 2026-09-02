@@ -19,6 +19,12 @@ require, configure, or communicate with the VST3.
 > Public Developer ID signed and notarised binaries are not available yet.
 > The repository includes a local-test installer pipeline for release testing.
 
+## App Preview
+
+<p align="center">
+  <img src="docs/images/mk-midi-crossfader-app.png" width="820" alt="MK MIDI Crossfader showing controller mapping, targets, and crossfade controls">
+</p>
+
 ## Choose A Workflow
 
 | Need | MIDI app | VST3 |
