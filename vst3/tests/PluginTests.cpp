@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <typeinfo>
 
 namespace {
 
@@ -56,6 +57,48 @@ void writeSnapshot(juce::AudioProcessorEditor& editor, const char* path) {
     require(
         juce::File(path).replaceWithData(encoded.getData(), encoded.getDataSize()),
         "Could not write editor snapshot"
+    );
+}
+
+template <typename ComponentType>
+ComponentType* findComponent(
+    juce::Component& root,
+    const juce::String& title
+) {
+    if (auto* component = dynamic_cast<ComponentType*>(&root);
+        component != nullptr && component->getTitle() == title) {
+        return component;
+    }
+    for (auto index = 0; index < root.getNumChildComponents(); ++index) {
+        if (auto* child = root.getChildComponent(index)) {
+            if (auto* match = findComponent<ComponentType>(*child, title)) {
+                return match;
+            }
+        }
+    }
+    return nullptr;
+}
+
+void requireInteractive(
+    juce::AudioProcessorEditor& editor,
+    juce::Component& component,
+    const std::string& name
+) {
+    require(component.isEnabled(), name + " is disabled");
+    require(component.isVisible(), name + " is hidden");
+    const auto centre = editor.getLocalPoint(
+        &component,
+        component.getLocalBounds().getCentre()
+    );
+    auto* hit = editor.getComponentAt(centre);
+    const auto hitDescription = hit == nullptr
+        ? std::string("none")
+        : hit->getName().toStdString() + " / "
+            + hit->getTitle().toStdString() + " / "
+            + typeid(*hit).name();
+    require(
+        hit == &component || component.isParentOf(hit),
+        name + " is blocked by another component: " + hitDescription
     );
 }
 
@@ -288,6 +331,20 @@ void testStateAndEditor() {
     );
     require(restored.slotLabel(6) == "Percussion Bus", "Target label was not restored");
 
+    MKCrossfaderProcessor snapshotController;
+    setPlainParameter(snapshotController, "session", 2.0f);
+    snapshotController.prepareToPlay(48000.0, 256);
+    restored.prepareToPlay(48000.0, 256);
+    juce::AudioBuffer<float> controllerAudio(2, 256);
+    juce::AudioBuffer<float> targetAudio(2, 256);
+    process(snapshotController, controllerAudio);
+    process(restored, targetAudio);
+    require(
+        restored.runtimeStatus()
+            == MKCrossfaderProcessor::RuntimeStatus::targetConnected,
+        "Restored Target did not reconnect for the editor preview"
+    );
+
     std::unique_ptr<juce::AudioProcessorEditor> editor(restored.createEditor());
     require(editor != nullptr, "Editor was not created");
     require(editor->getWidth() == 820 && editor->getHeight() == 620, "Editor size changed");
@@ -316,14 +373,100 @@ void testStateAndEditor() {
     }
 }
 
+void testEditorParameterBindings() {
+    {
+        MKCrossfaderProcessor roleProcessor;
+        std::unique_ptr<juce::AudioProcessorEditor> roleEditor(
+            roleProcessor.createEditor()
+        );
+        require(roleEditor != nullptr, "Editor was not created for Role testing");
+        roleEditor->addToDesktop(juce::ComponentPeer::windowIsTemporary);
+        roleEditor->setVisible(true);
+        auto* role = findComponent<juce::ComboBox>(*roleEditor, "Role");
+        require(role != nullptr, "Role control was not found");
+        requireInteractive(*roleEditor, *role, "Role control");
+        role->setSelectedId(2, juce::sendNotificationSync);
+        requireNear(
+            roleProcessor.state.getRawParameterValue("role")->load(),
+            1.0f,
+            1.0e-6f,
+            "Role control did not update its parameter"
+        );
+    }
+
+    MKCrossfaderProcessor processor;
+    std::unique_ptr<juce::AudioProcessorEditor> editor(processor.createEditor());
+    require(editor != nullptr, "Editor was not created for interaction testing");
+    editor->addToDesktop(juce::ComponentPeer::windowIsTemporary);
+    editor->setVisible(true);
+
+    auto* session = findComponent<juce::ComboBox>(*editor, "Session");
+    auto* mode = findComponent<juce::ComboBox>(*editor, "Transition mode");
+    auto* crossfader = findComponent<juce::Slider>(*editor, "Crossfader");
+    auto* unity = findComponent<juce::ToggleButton>(*editor, "Unity override");
+    require(session != nullptr, "Session control was not found");
+    require(mode != nullptr, "Mode control was not found");
+    require(crossfader != nullptr, "Crossfader control was not found");
+    require(unity != nullptr, "Unity control was not found");
+
+    requireInteractive(*editor, *session, "Session control");
+    session->setSelectedId(3, juce::sendNotificationSync);
+    requireNear(
+        processor.state.getRawParameterValue("session")->load(),
+        2.0f,
+        1.0e-6f,
+        "Session control did not update its parameter"
+    );
+
+    requireInteractive(*editor, *mode, "Mode control");
+    mode->setSelectedId(2, juce::sendNotificationSync);
+    requireNear(
+        processor.state.getRawParameterValue("mode")->load(),
+        1.0f,
+        1.0e-6f,
+        "Mode control did not update its parameter"
+    );
+
+    requireInteractive(*editor, *crossfader, "Crossfader control");
+    crossfader->setValue(0.75, juce::sendNotificationSync);
+    requireNear(
+        processor.state.getRawParameterValue("crossfader")->load(),
+        0.75f,
+        1.0e-5f,
+        "Crossfader control did not update its parameter"
+    );
+
+    requireInteractive(*editor, *unity, "Unity control");
+    unity->triggerClick();
+    juce::Timer::callAfterDelay(
+        50,
+        [] {
+            juce::MessageManager::getInstance()->stopDispatchLoop();
+        }
+    );
+    juce::MessageManager::getInstance()->runDispatchLoop();
+    require(unity->getToggleState(), "Unity control did not toggle after its click");
+    requireNear(
+        processor.state.getRawParameterValue("safeUnity")->load(),
+        1.0f,
+        1.0e-6f,
+        "Unity control did not update its parameter"
+    );
+}
+
 } // namespace
 
 int main() {
     juce::ScopedJuceInitialiser_GUI juceInitialiser;
+    if (std::getenv("MK_CROSSFADER_SNAPSHOT_ONLY") != nullptr) {
+        testStateAndEditor();
+        return 0;
+    }
     testEngine();
     testSharedBus();
     testProcessorPair();
     testStateAndEditor();
+    testEditorParameterBindings();
     std::cout << "MK Crossfader tests passed\n";
     return 0;
 }
