@@ -1,8 +1,10 @@
 # MK MIDI Crossfader
 
-MK MIDI Crossfader is a native macOS app with a persistent menu-bar control. It
-converts one physical MIDI CC into separate control values for parameters
-learned through its virtual `MK Crossfader` CoreMIDI input.
+MK MIDI Crossfader is a native macOS app created for coordinated live
+transitions with Maschine 3 and Maschine+ hardware in Controller mode. Its
+persistent menu-bar control converts one physical MIDI CC into separate control
+values for parameters learned through the virtual `MK Crossfader` CoreMIDI
+input.
 
 ## Compatibility
 
@@ -12,9 +14,10 @@ input and exposes parameters to MIDI Learn. Use `Parameter` targets for the
 full 0-127 range. `Level` targets are specifically calibrated for Maschine's
 mixer range and stop at CC 95.
 
-Maschine 3 is the primary documented workflow. The native app has also been
-manually verified with Ableton Live 12.4.5 on macOS. Compatibility with other
-software depends on its MIDI input and MIDI Learn implementation.
+Maschine 3 is the primary documented workflow. The app has also been manually
+verified with Ableton Live 12.4.5 on macOS, where one physical control can move
+several mapped parameters at once. Compatibility with other software depends on
+its MIDI input and MIDI Learn implementation.
 
 For Ableton Live, enable **Remote** for the virtual `MK Crossfader` input under
 **Settings > Link, Tempo & MIDI**, then map each `Parameter` target through

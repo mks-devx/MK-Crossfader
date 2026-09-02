@@ -806,8 +806,8 @@ private struct TargetRow: View {
                 }
                 .help(
                     model.isEnabled
-                        ? "Send this target's CC, then restore its live value"
-                        : "Send this target's CC, then send its Return Value"
+                        ? "Send a short MIDI Learn movement, then return to the current live value"
+                        : "Send a short MIDI Learn movement, then send the Return Value"
                 )
 
                 DisclosureGroup(isExpanded: $showsMapping) {

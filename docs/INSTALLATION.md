@@ -4,8 +4,9 @@ Official binary releases are distributed through the
 [Releases page](https://github.com/mks-devx/MK-Crossfader/releases). Download
 the `.pkg` and matching `.pkg.sha256` file for the current version.
 
-Close Maschine and any other plug-in hosts before installing. To verify a
-download in Terminal, run the checksum command from the download folder:
+Close Ableton Live, Maschine 3, and any other plug-in hosts before installing.
+To verify a download in Terminal, run the checksum command from the download
+folder:
 
 ```zsh
 shasum -a 256 -c MK-Crossfader-0.2.9.pkg.sha256
@@ -70,5 +71,6 @@ sources. Verify the checksum and obtain releases only from this repository.
 
 ## Uninstall
 
-Close Maschine and other plug-in hosts, then remove the three installed paths
-listed above. Removing the app does not delete its local macOS preferences.
+Close Ableton Live, Maschine 3, and other plug-in hosts, then remove the three
+installed paths listed above. Removing the app does not delete its local macOS
+preferences.

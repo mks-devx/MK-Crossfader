@@ -12,7 +12,7 @@ software that exposes the virtual source as an input and supports MIDI Learn
 can receive the generated CC messages. The app does not inspect or directly
 address objects inside the destination software.
 
-Maschine does not expose Groups or Sounds as addressable MIDI destinations.
+Maschine 3 does not expose Groups or Sounds as addressable MIDI destinations.
 Each app target therefore needs a one-time MIDI Learn assignment in the
 Maschine template. Target names are labels for that mapping, not live Maschine
 object references.
@@ -39,7 +39,7 @@ slots are reported as conflicts. Parameter IDs, plug-in identifiers, and the
 shared-memory protocol are compatibility boundaries and should not be changed
 casually.
 
-The VST3 changes only its own gain. It does not move Maschine mixer faders.
+The VST3 changes only its own gain. It does not move the host's mixer faders.
 Effects placed after a Target can continue producing tails after that Target is
 closed. A Target processes audio, not MIDI, and has no audible effect unless an
 audio signal passes through its plug-in instance.

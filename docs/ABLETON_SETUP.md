@@ -1,11 +1,15 @@
 # Ableton Live Setup
 
-MK Crossfader supports two independent Ableton Live workflows:
+Although MK Crossfader was created around a Maschine live performance setup,
+both products have also been manually verified in Ableton Live. They provide
+two independent workflows:
 
 - **MK MIDI Crossfader** turns one physical MIDI fader or knob into a
   coordinated multi-parameter control.
 - **MK Crossfader VST3** links one Controller to multiple audio Target
   instances for crossfading without moving Live's mixer faders.
+
+## MIDI App: Multi-Control
 
 The native app receives one hardware CC and sends separate CC messages through
 its virtual `MK Crossfader` MIDI input. Each destination can move through a
@@ -14,14 +18,14 @@ different range and direction.
 This workflow uses Ableton Live's standard MIDI Map system. It does not require
 Max for Live or the MK Crossfader VST3.
 
-## Configure Ableton Live
+### Configure Ableton Live
 
 1. Open MK MIDI Crossfader and select the physical MIDI controller.
 2. In Ableton Live, open **Settings > Link, Tempo & MIDI**.
 3. Find the input port named **MK Crossfader** and enable **Remote**.
 4. Leave the app paused while creating or changing mappings.
 
-## Create A Multi-Control Mapping
+### Create A Mapping
 
 1. Add a target in MK MIDI Crossfader and select **Parameter**.
 2. Set the target to **Range**.
@@ -35,7 +39,7 @@ Max for Live or the MK Crossfader VST3.
 Every target uses a separate output CC, so one incoming hardware movement can
 control many independently configured Ableton mappings.
 
-## Example Transition
+### Example Transition
 
 A single physical fader could control:
 
@@ -50,7 +54,7 @@ These percentages are MIDI output values. Ableton applies them through the Min
 and Max range stored in its MIDI mapping, so the audible result also depends on
 the destination parameter and its mapping range.
 
-## Important Behaviour
+### Behaviour And Limits
 
 - Use **Parameter**, not **Level**, for Ableton mappings. Parameter targets use
   the full MIDI range; Level targets are calibrated for Maschine's mixer.
@@ -65,7 +69,7 @@ the destination parameter and its mapping range.
 - A crash, forced quit, or power loss cannot send final Return Values. Keep a
   neutral recovery control available before performance use.
 
-## VST3 Audio Crossfading
+## VST3: Audio Crossfading
 
 The VST3 is a separate workflow and does not require the native app:
 

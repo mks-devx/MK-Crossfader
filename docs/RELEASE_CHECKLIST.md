@@ -29,8 +29,8 @@ Source publication and binary distribution are separate release gates.
   quarantine and Gatekeeper are exercised.
 - Verify app launch, VST3 discovery, saved-state recall, and Controller/Target
   communication in the supported host.
-- Rehearse physical controller startup, hot-plug, restore, conflict, and
-  recovery behaviour with the intended live template.
+- Rehearse physical controller startup, hot-plug, Return Value handling,
+  conflict states, and recovery behaviour with the intended live template.
 - Publish SHA-256 checksums and accurate release notes.
 - Include the project licence and applicable third-party notices with the
   downloadable artifacts.

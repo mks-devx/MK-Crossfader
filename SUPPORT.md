@@ -10,8 +10,9 @@ individual bug fixes.
 
 ## Before Reporting A Problem
 
-1. Read the [installation guide](docs/INSTALLATION.md) and
-   [Maschine setup guide](docs/MASCHINE_SETUP.md).
+1. Read the [installation guide](docs/INSTALLATION.md) and the setup guide for
+   [Maschine 3](docs/MASCHINE_SETUP.md) or
+   [Ableton Live](docs/ABLETON_SETUP.md).
 2. Search the existing GitHub issues for the same problem.
 3. If the problem has not been reported, open a public GitHub issue and include
    the affected MK Crossfader version, macOS version, destination software and

@@ -1,7 +1,9 @@
 # MK Crossfader VST3
 
-MK Crossfader is an independent macOS VST3 for linked crossfading across
-multiple plug-in instances. It runs without MK MIDI Crossfader.
+MK Crossfader is an independent macOS VST3 created for linked audio crossfading
+in a Maschine 3 live performance setup with Maschine+ hardware in Controller
+mode. It connects one Controller to multiple Target instances and runs without
+MK MIDI Crossfader.
 
 ## Roles
 
@@ -14,10 +16,11 @@ Scene gives every route explicit left and right endpoint gains.
 
 Targets use 15 ms gain smoothing and do not move host mixer faders.
 
-The VST3 also works in Ableton Live and other compatible macOS VST3 hosts. Put
-one Controller on the Master track, then put a Target after the audio source or
-effects on every track that should join the crossfade. All linked instances
-must use the same session and each Target must use a unique slot.
+The VST3 has also been manually verified in Ableton Live and can work in other
+compatible macOS VST3 hosts. Put one Controller on the Master track, then put a
+Target after the audio source or effects on every track that should join the
+crossfade. All linked instances must use the same session and each Target must
+use a unique slot.
 
 ## Audio Requirement
 
@@ -73,5 +76,6 @@ The output is under `vst3/build-universal/`. This source build is suitable for
 local testing. For normal installation, use the Developer ID signed and
 Apple-notarised package from the repository's Releases page.
 
-See [Maschine setup](../docs/MASCHINE_SETUP.md) and
+See [Maschine setup](../docs/MASCHINE_SETUP.md),
+[Ableton Live setup](../docs/ABLETON_SETUP.md), and
 [building](../docs/BUILDING.md).

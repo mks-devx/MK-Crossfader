@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Documentation
+
+- Clarified that MK Crossfader was created primarily for live performance with
+  Maschine 3 on macOS and Maschine+ hardware in Controller mode.
+- Separated the Ableton Live MIDI multi-control and VST3 audio crossfading
+  workflows more clearly.
+- Improved setup, installer, support, compatibility, and recovery wording.
+
 ## 2026-09-03 - 0.2.9
 
 ### MK MIDI Crossfader
@@ -27,7 +37,7 @@
 ### MK MIDI Crossfader 0.2.8
 
 - Native CoreMIDI bridge with A/B, layered, paired, and per-target Range modes.
-- Curves, minimum levels, restore behaviour, MIDI Learn, colours, and user
+- Curves, minimum levels, Return Value behaviour, MIDI Learn, colours, and user
   presets.
 - Startup pause, mapping safeguards, controller refresh, and regression tests.
 - Persistent menu-bar access, an optional Dock icon, and optional Launch at
