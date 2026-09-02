@@ -15,6 +15,11 @@ Source publication and binary distribution are separate release gates.
 
 - Bump and align app, plug-in, and release versions.
 - Build universal release artifacts from a clean tagged commit.
+- Start with a clean VST3 build directory and confirm JUCE resolves inside that
+  build rather than to an unrelated local checkout.
+- Run `./scripts/audit-release.sh` against the final package and review its
+  expanded payload manually.
+- Confirm the package contains no preinstall or postinstall scripts.
 - Run Swift tests, all CTest targets, and strict plug-in validation.
 - Sign release artifacts with the correct Developer ID identity and hardened
   runtime settings.

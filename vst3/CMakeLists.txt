@@ -9,7 +9,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
         "Oldest supported macOS version")
 endif()
 
-project(MK_Crossfader VERSION 0.1.0 LANGUAGES C CXX)
+project(MK_Crossfader VERSION 0.2.8 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -64,7 +64,8 @@ target_compile_definitions(MK_Crossfader PUBLIC
 )
 
 target_link_libraries(MK_Crossfader PRIVATE
-    juce::juce_audio_utils
+    juce::juce_audio_processors
+    juce::juce_gui_basics
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags
@@ -76,7 +77,8 @@ add_executable(MK_Crossfader_Tests
 target_include_directories(MK_Crossfader_Tests PRIVATE src)
 target_link_libraries(MK_Crossfader_Tests PRIVATE
     MK_Crossfader
-    juce::juce_audio_utils
+    juce::juce_audio_processors
+    juce::juce_gui_basics
 )
 add_test(NAME MK_Crossfader_Tests COMMAND MK_Crossfader_Tests)
 
@@ -104,7 +106,8 @@ target_compile_definitions(MK_Crossfader_HostValidation PRIVATE
     JUCE_USE_CURL=0
 )
 target_link_libraries(MK_Crossfader_HostValidation PRIVATE
-    juce::juce_audio_utils
+    juce::juce_audio_processors
+    juce::juce_gui_basics
 )
 add_dependencies(MK_Crossfader_HostValidation MK_Crossfader_VST3)
 add_test(

@@ -15,8 +15,8 @@ crossfading in Maschine 3:
 The products are independent. The VST3 does not need the app, and the app does
 not configure or communicate with the VST3.
 
-> This repository currently provides source builds. Public Developer ID signed
-> and notarised binaries are not available yet.
+> Public Developer ID signed and notarised binaries are not available yet.
+> The repository includes a local-test installer pipeline for release testing.
 
 ## Choose A Workflow
 

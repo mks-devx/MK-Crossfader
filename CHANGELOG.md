@@ -9,8 +9,15 @@
   presets.
 - Startup pause, mapping safeguards, controller refresh, and regression tests.
 
-### MK Crossfader VST3 0.1.0
+### MK Crossfader VST3 0.2.8
 
 - Independent Controller and Target roles with eight shared-memory sessions.
 - A/B, layered, paired, and Custom Scene modes with local smoothed gain.
 - Conflict detection, exact unity recovery, saved-state support, and host tests.
+
+### Packaging
+
+- Added a combined, script-free macOS installer pipeline for the app, VST3,
+  licence, notices, and installation documentation.
+- Added automated release privacy, metadata, architecture, signature, and
+  network-API checks.

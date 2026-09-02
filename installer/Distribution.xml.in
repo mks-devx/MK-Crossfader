@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>MK Crossfader @VERSION@</title>
+    <organization>com.mk-tools.crossfader</organization>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    <options customize="never" require-scripts="false" rootVolumeOnly="true"/>
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="14.0"/>
+        </allowed-os-versions>
+    </volume-check>
+    <welcome file="Welcome.html"/>
+    <license file="LICENSE.txt"/>
+    <readme file="ReadMe.html"/>
+    <conclusion file="Conclusion.html"/>
+
+    <choices-outline>
+        <line choice="default">
+            <line choice="app"/>
+            <line choice="vst3"/>
+            <line choice="documents"/>
+        </line>
+    </choices-outline>
+
+    <choice id="default" title="MK Crossfader" visible="false"/>
+    <choice id="app" title="MK MIDI Crossfader" visible="false">
+        <pkg-ref id="com.mk-tools.crossfader.app"/>
+    </choice>
+    <choice id="vst3" title="MK Crossfader VST3" visible="false">
+        <pkg-ref id="com.mk-tools.crossfader.vst3"/>
+    </choice>
+    <choice id="documents" title="Licences and documentation" visible="false">
+        <pkg-ref id="com.mk-tools.crossfader.documents"/>
+    </choice>
+
+    <pkg-ref id="com.mk-tools.crossfader.app" version="@VERSION@" auth="Root">MKCrossfaderApp.pkg</pkg-ref>
+    <pkg-ref id="com.mk-tools.crossfader.vst3" version="@VERSION@" auth="Root">MKCrossfaderVST3.pkg</pkg-ref>
+    <pkg-ref id="com.mk-tools.crossfader.documents" version="@VERSION@" auth="Root">MKCrossfaderDocuments.pkg</pkg-ref>
+</installer-gui-script>

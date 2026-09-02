@@ -1,10 +1,13 @@
-#include <juce_audio_utils/juce_audio_utils.h>
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_gui_basics/juce_gui_basics.h>
 
 #include <cmath>
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 namespace {
 
@@ -106,5 +109,12 @@ int main(int argc, char** argv) {
 
     std::cout << "Loaded, linked and processed: "
               << pluginBundle.getFullPathName() << '\n';
+
+    if (const auto* hold = std::getenv("MK_CROSSFADER_VALIDATION_HOLD_MS")) {
+        const auto milliseconds = std::strtol(hold, nullptr, 10);
+        if (milliseconds > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+        }
+    }
     return 0;
 }

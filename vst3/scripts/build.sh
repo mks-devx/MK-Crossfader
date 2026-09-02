@@ -2,7 +2,11 @@
 set -euo pipefail
 
 ROOT="${0:A:h:h}"
-BUILD_DIR="$ROOT/build-universal"
+BUILD_DIR="${VST3_BUILD_DIR:-$ROOT/build-universal}"
+
+if [[ "${CLEAN_BUILD:-0}" == "1" ]]; then
+    rm -rf "$BUILD_DIR"
+fi
 
 cmake_args=(
     -DCMAKE_BUILD_TYPE=Release
@@ -15,6 +19,10 @@ if [[ -n "${JUCE_SOURCE_DIR:-}" ]]; then
         exit 1
     fi
     cmake_args+=("-DFETCHCONTENT_SOURCE_DIR_JUCE=$JUCE_SOURCE_DIR")
+else
+    # Clear a cached override so this project cannot silently reuse another
+    # local JUCE checkout.
+    cmake_args+=("-DFETCHCONTENT_SOURCE_DIR_JUCE=")
 fi
 
 cmake -S "$ROOT" -B "$BUILD_DIR" "${cmake_args[@]}"

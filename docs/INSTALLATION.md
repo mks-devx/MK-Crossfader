@@ -3,6 +3,26 @@
 Official signed and notarised downloads are not available yet. The current
 installation path is to build from source.
 
+## Combined Local-Test Installer
+
+Maintainers can create one package containing both products:
+
+```zsh
+./scripts/build-installer.sh
+```
+
+The unsigned `local-test` package is only for validation on the Mac that built
+it. Do not redistribute it or tell users to bypass Gatekeeper. A public package
+must be Developer ID signed, notarised, and tested after browser download on a
+clean supported Mac.
+
+The combined installer writes only these locations and runs no installation
+scripts:
+
+- `/Applications/MK MIDI Crossfader.app`
+- `/Library/Audio/Plug-Ins/VST3/MK Crossfader.vst3`
+- `/Library/Application Support/MK Crossfader`
+
 ## MK MIDI Crossfader
 
 After running `./macos-app/scripts/build-app.sh`:
@@ -32,3 +52,8 @@ existing projects have opened correctly.
 Do not bypass macOS security warnings for binary downloads from an untrusted
 source. A future official release must be Developer ID signed, notarised, and
 tested after downloading on a clean Mac.
+
+## Uninstall
+
+Close Maschine and other plug-in hosts, then remove the three installed paths
+listed above. Removing the app does not delete its local macOS preferences.

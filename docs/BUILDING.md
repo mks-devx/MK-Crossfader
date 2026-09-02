@@ -8,7 +8,8 @@
 - Git and internet access for the default JUCE download
 
 The VST3 build pins JUCE 8.0.15. Set `JUCE_SOURCE_DIR` to a compatible local
-checkout if the dependency should not be downloaded.
+checkout if the dependency should not be downloaded. Without that variable,
+the build explicitly clears any cached local-source override.
 
 ## Verify Both Products
 
@@ -18,7 +19,7 @@ From the repository root:
 ./scripts/verify-all.sh
 ```
 
-This runs the Swift tests, builds the app, builds the universal VST3, signs both
+This runs the Swift tests, builds the universal app and VST3, signs both
 products ad hoc, and runs the VST3 project tests. It does not install anything.
 
 ## App Only
@@ -39,6 +40,28 @@ maintainer action:
 ```zsh
 ./macos-app/scripts/build-icon.sh
 ```
+
+## Combined Installer
+
+```zsh
+./scripts/build-installer.sh
+```
+
+Without Apple Developer ID identities, this creates
+`dist/MK-Crossfader-0.2.8-local-test.pkg`. It contains the app, VST3, licence,
+third-party notices, and installation notes. The build performs a release
+privacy audit and writes a SHA-256 checksum next to the package.
+
+A distributable build requires both signing identities:
+
+```zsh
+APP_SIGNING_IDENTITY="Developer ID Application: ..." \
+INSTALLER_SIGNING_IDENTITY="Developer ID Installer: ..." \
+./scripts/build-installer.sh
+```
+
+The signed package must still be notarised and tested after download on a clean
+Mac before publication.
 
 ## VST3 Only
 
