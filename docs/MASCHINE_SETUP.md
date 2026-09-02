@@ -1,5 +1,8 @@
 # Maschine 3 Setup
 
+Both workflows work with any MIDI controller that sends a standard, assignable
+MIDI CC. No specific controller model is required.
+
 ## Independent VST3
 
 1. Add MK Crossfader to Master and set `Role` to `Controller`.

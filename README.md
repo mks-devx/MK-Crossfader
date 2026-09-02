@@ -1,4 +1,4 @@
-# MK Crossfader
+# MK Crossfader (Maschine Crossfader)
 
 <p align="center">
   <img src="macos-app/packaging/Resources/MKCrossfaderLogo.png" width="128" alt="MK Crossfader logo">
@@ -15,6 +15,9 @@ crossfading in Maschine 3:
 The products are completely independent and can be used separately. The VST3
 does not require the app to be installed or running, and the app does not
 require, configure, or communicate with the VST3.
+
+Either workflow can be driven by any MIDI controller that sends a standard,
+assignable MIDI CC. No specific controller model is required.
 
 > Public Developer ID signed and notarised binaries are not available yet.
 > The repository includes a local-test installer pipeline for release testing.
