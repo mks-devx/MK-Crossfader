@@ -28,15 +28,15 @@ with any MIDI controller that sends a standard, assignable MIDI CC:
 The native app is broader than a conventional crossfader. It can create
 coordinated performance transitions or work as a custom sound-design macro:
 one MIDI fader or knob can move multiple learned parameters together, while
-each target keeps its own direction, range, response shape, and restore value.
+each target keeps its own direction, range, response shape, and Return Value.
 The VST3 intentionally stays focused on gain transitions.
 
 Because the native app uses standard CoreMIDI, it can also work with other
 macOS software that enables the virtual **MK Crossfader** input and learns
 incoming MIDI CC messages. Use full-range **Parameter** targets for this. The
-**Level** target is specifically calibrated for Maschine's mixer range. Other
-software is not part of the 0.2.8 test matrix, so compatibility depends on its
-MIDI Learn implementation.
+**Level** target is specifically calibrated for Maschine's mixer range. The
+native app has also been manually verified with Ableton Live 12.4.5 on macOS.
+Compatibility with other software depends on its MIDI Learn implementation.
 
 The products are completely independent and can be used separately. The VST3
 does not require the app to be installed or running, and the app does not
@@ -101,7 +101,7 @@ For the MIDI app with Maschine:
    **Send Learn**.
 4. Assign the target to A, B, Range, or Off.
 
-For the MIDI app with other MIDI Learn software:
+For the MIDI app with Ableton Live or other MIDI Learn software:
 
 1. Start MK MIDI Crossfader and select the physical MIDI controller.
 2. Enable the virtual **MK Crossfader** input for MIDI mapping in the
@@ -110,6 +110,10 @@ For the MIDI app with other MIDI Learn software:
    parameter, and press **Send Learn**.
 4. Repeat for additional parameters, then assign each target to A, B, Range, or
    Off.
+
+In Ableton Live, enable **Remote** for the **MK Crossfader** input under
+**Settings > Link, Tempo & MIDI**, then use Live's MIDI Map mode for each
+destination.
 
 The destination must expose the parameter to MIDI Learn. The app does not scan
 other software, control arbitrary plug-in parameters directly, or rewrite host

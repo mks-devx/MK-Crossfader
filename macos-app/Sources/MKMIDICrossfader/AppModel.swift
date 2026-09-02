@@ -376,12 +376,13 @@ final class AppModel: ObservableObject {
             return
         }
 
+        let oldTarget = targets[index]
+        restoreTargetIfNeeded(oldTarget)
         targets[index].kind = kind
         if kind == .customMIDI {
             targets[index].transition = .range
         }
         lastSentValues[id] = nil
-        restoreTargetIfNeeded(targets[index])
     }
 
     func updateTargetParameterCurve(
@@ -663,7 +664,7 @@ final class AppModel: ObservableObject {
         )
     }
 
-    private func prepareForTermination() {
+    func prepareForTermination() {
         guard !didRestoreForTermination else {
             return
         }

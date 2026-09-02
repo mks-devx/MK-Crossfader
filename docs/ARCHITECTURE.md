@@ -17,7 +17,7 @@ Each app target therefore needs a one-time MIDI Learn assignment in the
 Maschine template. Target names are labels for that mapping, not live Maschine
 object references.
 
-The app owns transition modes, curves, target ranges, restore values, presets,
+The app owns transition modes, curves, target ranges, Return Values, presets,
 and visual colours. Level targets stop at Maschine's nearest safe unity step:
 CC 95, approximately -0.1 dB. CC 96 is already above unity. Parameter targets
 can use the full 0-127 MIDI range.

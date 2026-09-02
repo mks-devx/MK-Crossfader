@@ -57,9 +57,10 @@ session reports `CONTROLLER CONFLICT`; duplicate Target slots report
 7. Repeat only for the controls needed by the performance and save the
    assignments in a dedicated Maschine template.
 
-Use `Restore & Pause` before changing locked routing or closing the app.
-Forced termination cannot send restore values, so retain a manual neutral
-snapshot or recovery control.
+Use `Return & Pause` before changing locked routing or closing the app. A
+target's Return Value is configured explicitly; it is not read back from
+Maschine. Forced termination cannot send Return Values, so retain a manual
+neutral snapshot or recovery control.
 
 Maschine can disable a virtual MIDI input when the app disappears. Start the
 app before Maschine and avoid restarting it during a performance. If a restart

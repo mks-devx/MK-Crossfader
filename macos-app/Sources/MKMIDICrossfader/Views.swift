@@ -52,7 +52,7 @@ struct MenuBarContent: View {
         Button {
             model.restoreAndPause()
         } label: {
-            Label("Restore & Pause", systemImage: "arrow.counterclockwise")
+            Label("Return & Pause", systemImage: "arrow.counterclockwise")
         }
 
         Divider()
@@ -362,8 +362,8 @@ struct SettingsView: View {
                     .frame(width: 18, height: 18)
             }
             .buttonStyle(.borderless)
-            .help("Restore target values and pause")
-            .accessibilityLabel("Restore and Pause")
+            .help("Send target Return Values and pause")
+            .accessibilityLabel("Return and Pause")
 
             Divider()
                 .frame(height: 24)
@@ -540,7 +540,7 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("Restore & Edit") {
+                    Button("Return & Edit") {
                         model.restoreAndPause()
                     }
                     .controlSize(.small)
@@ -807,7 +807,7 @@ private struct TargetRow: View {
                 .help(
                     model.isEnabled
                         ? "Send this target's CC, then restore its live value"
-                        : "Send this target's CC, then return to Restore"
+                        : "Send this target's CC, then send its Return Value"
                 )
 
                 DisclosureGroup(isExpanded: $showsMapping) {
@@ -856,10 +856,10 @@ private struct TargetRow: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    LabeledContent("Restore") {
+                    LabeledContent("Return Value") {
                         HStack(spacing: 8) {
                             Slider(value: restoreBinding, in: 0...100, step: 1)
-                                .accessibilityLabel("Restore value")
+                                .accessibilityLabel("Return value")
                             Text("\(target.restorePercent)%")
                                 .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(.secondary)
@@ -870,8 +870,8 @@ private struct TargetRow: View {
                     .disabled(model.isEnabled)
                     .help(
                         model.isEnabled
-                            ? "Pause before changing the restore value"
-                            : "Value sent when the bridge pauses, the target is removed, or the app quits"
+                            ? "Pause before changing the Return Value"
+                            : "Value sent on Pause, target removal, CC or output change, and normal Quit"
                     )
                 }
             }

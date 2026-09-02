@@ -14,6 +14,7 @@ private final class RecordingMIDIEngine: MIDIEngineProtocol {
     var onControlChange: ((MIDIControlChange) -> Void)?
     var onSetupChange: (() -> Void)?
     var hasOutputEndpoint = true
+    var exposesSource = true
     var sentMessages: [Message] = []
 
     private let source = MIDISourceDescriptor(
@@ -23,7 +24,7 @@ private final class RecordingMIDIEngine: MIDIEngineProtocol {
     )
 
     func availableSources() -> [MIDISourceDescriptor] {
-        [source]
+        exposesSource ? [source] : []
     }
 
     func connect(to source: MIDISourceDescriptor?) -> Bool {
@@ -169,9 +170,9 @@ func launchAtLoginStatus() {
     #expect(!controller.requiresApproval)
 }
 
-@Test("Range output follows the fader and pause sends Restore")
+@Test("Range output follows the fader and pause sends the Return Value")
 @MainActor
-func rangeOutputAndRestore() async throws {
+func rangeOutputAndReturnValue() async throws {
     let engine = RecordingMIDIEngine()
     let defaults = makeDefaults()
     let target = CrossfadeTarget(
@@ -203,6 +204,173 @@ func rangeOutputAndRestore() async throws {
 
     #expect(engine.sentMessages.last?.controller == 112)
     #expect(engine.sentMessages.last?.value == 32)
+}
+
+@Test("Parameter Return Value uses the full MIDI range")
+func parameterReturnValueUsesFullMIDIRange() {
+    var target = CrossfadeTarget(
+        name: "Filter",
+        controller: 112,
+        side: .b,
+        kind: .customMIDI,
+        transition: .range,
+        restorePercent: 25
+    )
+
+    #expect(target.restoreOutput == 32)
+    target.restorePercent = 100
+    #expect(target.restoreOutput == 127)
+}
+
+@Test("Removing a target sends its Return Value")
+@MainActor
+func removingTargetSendsReturnValue() throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Filter",
+        controller: 112,
+        side: .b,
+        kind: .customMIDI,
+        transition: .range,
+        restorePercent: 25
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+
+    model.removeTarget(id: target.id)
+
+    #expect(engine.sentMessages == [
+        .init(value: 32, channel: 15, controller: 112)
+    ])
+    #expect(model.targets.isEmpty)
+}
+
+@Test("Changing a target CC returns the old mapping")
+@MainActor
+func changingTargetCCReturnsOldMapping() throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Filter",
+        controller: 112,
+        side: .b,
+        kind: .customMIDI,
+        transition: .range,
+        restorePercent: 25
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+
+    model.updateTargetController(id: target.id, controller: 113)
+
+    #expect(engine.sentMessages == [
+        .init(value: 32, channel: 15, controller: 112)
+    ])
+    #expect(model.targets.first?.controller == 113)
+}
+
+@Test("Changing target type returns using the old target range")
+@MainActor
+func changingTargetTypeUsesOldRange() throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Group",
+        controller: 112,
+        side: .a,
+        kind: .maschineLevel,
+        restorePercent: 100
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+
+    model.updateTargetKind(id: target.id, kind: .customMIDI)
+
+    #expect(engine.sentMessages == [
+        .init(value: 95, channel: 15, controller: 112)
+    ])
+    #expect(model.targets.first?.kind == .customMIDI)
+}
+
+@Test("Changing output channel returns targets on the old channel")
+@MainActor
+func changingOutputChannelReturnsOldChannel() throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Filter",
+        controller: 112,
+        side: .b,
+        kind: .customMIDI,
+        transition: .range,
+        restorePercent: 25
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+
+    model.outputChannel = 4
+
+    #expect(engine.sentMessages == [
+        .init(value: 32, channel: 15, controller: 112)
+    ])
+}
+
+@Test("Normal termination returns active targets exactly once")
+@MainActor
+func terminationReturnsActiveTargetsOnce() async throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Filter",
+        controller: 112,
+        side: .b,
+        kind: .customMIDI,
+        transition: .range,
+        restorePercent: 25
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+    engine.emit(channel: 13, controller: 48, value: 64)
+    await drainMainQueue()
+    model.isEnabled = true
+    engine.sentMessages.removeAll()
+
+    model.prepareForTermination()
+    model.prepareForTermination()
+
+    #expect(engine.sentMessages == [
+        .init(value: 32, channel: 15, controller: 112)
+    ])
+}
+
+@Test("Controller disconnect returns active targets")
+@MainActor
+func controllerDisconnectReturnsActiveTargets() async throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Filter",
+        controller: 112,
+        side: .b,
+        kind: .customMIDI,
+        transition: .range,
+        restorePercent: 25
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+    engine.emit(channel: 13, controller: 48, value: 64)
+    await drainMainQueue()
+    model.isEnabled = true
+    engine.sentMessages.removeAll()
+
+    engine.exposesSource = false
+    model.refreshSources()
+
+    #expect(!model.isEnabled)
+    #expect(engine.sentMessages == [
+        .init(value: 32, channel: 15, controller: 112)
+    ])
 }
 
 @Test("Loading presets while paused sends no MIDI")
@@ -269,9 +437,9 @@ func sendLearnPulse() async throws {
     ])
 }
 
-@Test("Send Learn cannot strand a target above its Restore value")
+@Test("Send Learn cannot strand a target above its Return Value")
 @MainActor
-func sendLearnRestoreSafety() async throws {
+func sendLearnReturnSafety() async throws {
     let engine = RecordingMIDIEngine()
     let defaults = makeDefaults()
     let target = CrossfadeTarget(
