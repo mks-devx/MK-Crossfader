@@ -12,8 +12,9 @@ crossfading in Maschine 3:
 - **MK Crossfader VST3** is a self-contained plug-in that links one Controller
   instance to Target instances without changing Maschine's mixer faders.
 
-The products are independent. The VST3 does not need the app, and the app does
-not configure or communicate with the VST3.
+The products are completely independent and can be used separately. The VST3
+does not require the app to be installed or running, and the app does not
+require, configure, or communicate with the VST3.
 
 > Public Developer ID signed and notarised binaries are not available yet.
 > The repository includes a local-test installer pipeline for release testing.
@@ -25,7 +26,7 @@ not configure or communicate with the VST3.
 | Crossfade without inserting a plug-in on every target | Yes | No |
 | Keep Maschine mixer faders untouched | No | Yes |
 | Control filters, sends, or other learned parameters | Yes | No |
-| Run without a separate app | No | Yes |
+| Requires the other MK Crossfader product | No | No |
 | Exact plug-in unity at 0.0 dB | No | Yes |
 
 Use one workflow per crossfader system. Combining them is possible, but only

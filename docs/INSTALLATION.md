@@ -23,6 +23,10 @@ scripts:
 - `/Library/Audio/Plug-Ins/VST3/MK Crossfader.vst3`
 - `/Library/Application Support/MK Crossfader`
 
+The app and VST3 are independent products. Either can be used by itself; the
+VST3 does not require the app to be installed or running, and the app does not
+require the VST3.
+
 ## MK MIDI Crossfader
 
 After running `./macos-app/scripts/build-app.sh`:
