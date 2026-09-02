@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-app:
+    name: macOS app
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Run Swift tests
+        run: swift test --package-path macos-app
+      - name: Build app bundle
+        run: ./macos-app/scripts/build-app.sh
+
+  vst3:
+    name: VST3
+    runs-on: macos-14
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S vst3 -B vst3/build-ci -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build vst3/build-ci --config Release --parallel 4
+      - name: Test
+        run: ctest --test-dir vst3/build-ci --output-on-failure --timeout 45
