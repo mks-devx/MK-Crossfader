@@ -57,7 +57,13 @@ Source maintainers can also create a separate ad-hoc signed local-test package.
 ## VST3 Preview
 
 <p align="center">
+  <strong>Controller</strong><br>
   <img src="docs/images/mk-crossfader-vst3.png" width="820" alt="MK Crossfader VST3 Controller showing crossfade modes and target routes in Maschine 3">
+</p>
+
+<p align="center">
+  <strong>Target</strong><br>
+  <img src="docs/images/mk-crossfader-vst3-target.png" width="820" alt="MK Crossfader VST3 Target showing its linked session, target slot, connection state, and current gain">
 </p>
 
 ## Choose A Workflow
