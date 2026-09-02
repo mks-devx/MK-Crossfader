@@ -1,4 +1,4 @@
-# MK Crossfader (Maschine Crossfader)
+# MK Crossfader
 
 <p align="center">
   <img src="macos-app/packaging/Resources/MKCrossfaderLogo.png" width="128" alt="MK Crossfader logo">
@@ -12,13 +12,14 @@ own Maschine-based live set, and released free for the community.
 > [Releases page](https://github.com/mks-devx/MK-Crossfader/releases). No
 > unsigned public binaries are distributed from this repository.
 
-MK Crossfader is a free, open-source pair of macOS performance tools for
-Maschine 3:
+MK Crossfader is a free, open-source macOS toolkit for multi-parameter MIDI
+control and linked audio crossfading. Maschine 3 is its primary documented and
+tested workflow:
 
 - **MK MIDI Crossfader** is a native macOS app with a persistent menu-bar
-  control that maps one physical MIDI control to multiple Maschine targets. It
-  can control mixer levels, filters, sends, effects, or any other parameter
-  available to Maschine MIDI Learn.
+  control that maps one physical MIDI control to multiple MIDI CC targets. It
+  can control levels, filters, sends, effects, or other parameters exposed to
+  MIDI Learn by the destination software.
 - **MK Crossfader VST3** is a dedicated audio crossfader that links one
   Controller instance to Target instances without changing Maschine's mixer
   faders.
@@ -28,6 +29,13 @@ coordinated performance transitions or work as a custom sound-design macro:
 one MIDI fader or knob can move multiple learned parameters together, while
 each target keeps its own direction, range, response shape, and restore value.
 The VST3 intentionally stays focused on gain transitions.
+
+Because the native app uses standard CoreMIDI, it can also work with other
+macOS software that enables the virtual **MK Crossfader** input and learns
+incoming MIDI CC messages. Use full-range **Parameter** targets for this. The
+**Level** target is specifically calibrated for Maschine's mixer range. Other
+software is not part of the 0.2.8 test matrix, so compatibility depends on its
+MIDI Learn implementation.
 
 The products are completely independent and can be used separately. The VST3
 does not require the app to be installed or running, and the app does not
@@ -75,13 +83,27 @@ instance. It works with samples, loops, software instruments, and live audio;
 it does not process MIDI or create sound on an empty channel. The Master
 Controller sends crossfader control data but does not fade the Master output.
 
-For the MIDI app:
+For the MIDI app with Maschine:
 
 1. Start MK MIDI Crossfader before Maschine.
 2. Enable its virtual **MK Crossfader** MIDI input in Maschine.
 3. Add a target, put the matching Maschine parameter into MIDI Learn, and press
    **Send Learn**.
 4. Assign the target to A, B, Range, or Off.
+
+For the MIDI app with other MIDI Learn software:
+
+1. Start MK MIDI Crossfader and select the physical MIDI controller.
+2. Enable the virtual **MK Crossfader** input for MIDI mapping in the
+   destination software.
+3. Add a **Parameter** target, activate MIDI Learn on the destination
+   parameter, and press **Send Learn**.
+4. Repeat for additional parameters, then assign each target to A, B, Range, or
+   Off.
+
+The destination must expose the parameter to MIDI Learn. The app does not scan
+other software, control arbitrary plug-in parameters directly, or rewrite host
+routing.
 
 The app appears in both the Dock and menu bar by default. Disable **Show in
 Dock** under **Advanced** to keep it available only from the menu bar. Enable
@@ -94,7 +116,10 @@ recovery workflow.
 
 - macOS 14 or later for MK MIDI Crossfader
 - macOS 13 or later and a VST3 host for MK Crossfader VST3
-- Maschine 3 desktop software for the documented workflow
+- A destination that accepts virtual CoreMIDI input and MIDI Learn for general
+  native-app use
+- Maschine 3 desktop software for the documented VST3 workflow and the
+  Maschine-calibrated Level target
 - Xcode command-line tools and CMake 3.22 or later to build from source
 
 These tools run on the Mac. Maschine+ can be used in **Controller mode** with

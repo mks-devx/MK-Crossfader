@@ -1,8 +1,20 @@
 # MK MIDI Crossfader
 
 MK MIDI Crossfader is a native macOS app with a persistent menu-bar control. It
-converts one physical MIDI CC into separate control values for learned Maschine
-parameters.
+converts one physical MIDI CC into separate control values for parameters
+learned through its virtual `MK Crossfader` CoreMIDI input.
+
+## Compatibility
+
+The app uses standard CoreMIDI rather than a Maschine-specific control
+protocol. It can control other macOS software that accepts a virtual CoreMIDI
+input and exposes parameters to MIDI Learn. Use `Parameter` targets for the
+full 0-127 range. `Level` targets are specifically calibrated for Maschine's
+mixer range and stop at CC 95.
+
+Maschine 3 is the primary documented and tested workflow. Compatibility with
+other software depends on its MIDI input and MIDI Learn implementation and is
+not part of the 0.2.8 automated test matrix.
 
 ## Features
 
@@ -26,9 +38,9 @@ The built-in presets are workflow starting points and do not emulate hardware.
 
 ## Target Types
 
-`Maschine Level` targets are capped at CC 95, Maschine's nearest safe step
-below unity. `MIDI Parameter` targets can use the complete 0-127 range for
-filters, sends, and other learned controls.
+`Level` targets are capped at CC 95, Maschine's nearest safe step below unity.
+`Parameter` targets can use the complete 0-127 range for filters, sends, and
+other learned controls.
 
 Each target can be assigned to A, B, Range, or Off. A and B follow the global
 mode and curve. Range uses its own left value, right value, shape, and restore

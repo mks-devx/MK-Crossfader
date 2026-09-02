@@ -7,6 +7,11 @@ source named `MK Crossfader`. It keeps a persistent menu-bar control and can
 optionally appear in the Dock or register with macOS to launch at login. It
 converts one absolute MIDI CC into a separate CC for every configured target.
 
+This transport uses standard CoreMIDI and does not require Maschine. Any macOS
+software that exposes the virtual source as an input and supports MIDI Learn
+can receive the generated CC messages. The app does not inspect or directly
+address objects inside the destination software.
+
 Maschine does not expose Groups or Sounds as addressable MIDI destinations.
 Each app target therefore needs a one-time MIDI Learn assignment in the
 Maschine template. Target names are labels for that mapping, not live Maschine
@@ -45,6 +50,8 @@ audio signal passes through its plug-in instance.
 - App presets cannot configure VST3 instances.
 - VST3 sessions are not visible to the app.
 - Neither product rewrites Maschine routing.
+- The native app can target other MIDI Learn software through CoreMIDI, but
+  Maschine 3 remains the documented and tested 0.2.8 workflow.
 - Both products run on the Mac. Maschine+ can control Maschine 3 on the Mac in
   Controller mode, but neither product runs inside Maschine+ standalone.
 - AU is not currently built or supported.
