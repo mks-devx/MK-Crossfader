@@ -1,6 +1,6 @@
 # Support And Updates
 
-MK Crossfader is a free, community-supported open-source project. Setup help,
+MK Crossfader is a community-supported open-source project. Setup help,
 troubleshooting, and bug reports are handled publicly on GitHub so that answers
 remain searchable and useful to everyone.
 

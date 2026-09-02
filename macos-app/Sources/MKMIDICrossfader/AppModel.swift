@@ -272,11 +272,9 @@ final class AppModel: ObservableObject {
         sources = engine.availableSources()
 
         if !sources.contains(where: { $0.id == selectedSourceID }),
-            let faderfox = sources.first(where: {
-                $0.name.localizedCaseInsensitiveContains("Faderfox")
-            })
+            let firstSource = sources.first
         {
-            selectedSourceID = faderfox.id
+            selectedSourceID = firstSource.id
             return
         }
 

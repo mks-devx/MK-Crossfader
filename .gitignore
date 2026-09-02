@@ -21,4 +21,5 @@ compile_commands.json
 *.log
 *.sample.txt
 AGENTS.local.md
-branding/proposals/
+/branding/
+/social/

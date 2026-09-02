@@ -5,14 +5,15 @@
 </p>
 
 Created by [Mike Konstantinidis](https://konstantinidis.net/) while building his
-own Maschine-based live set, and released free for the community.
+own Maschine-based live set, and released as an open-source project for the
+community.
 
 > **Binary releases:** Developer ID signed and Apple-notarised installers are
 > distributed only through the
 > [Releases page](https://github.com/mks-devx/MK-Crossfader/releases). No
 > unsigned public binaries are distributed from this repository.
 
-MK Crossfader is a free, open-source macOS toolkit for multi-parameter MIDI
+MK Crossfader is an open-source macOS toolkit for multi-parameter MIDI
 control and linked audio crossfading. It is designed and tested with Maschine 3
 and supported Maschine hardware in Controller mode, while remaining compatible
 with any MIDI controller that sends a standard, assignable MIDI CC:

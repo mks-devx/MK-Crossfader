@@ -20,7 +20,7 @@ private final class RecordingMIDIEngine: MIDIEngineProtocol {
     private let source = MIDISourceDescriptor(
         id: 1,
         endpoint: MIDIEndpointRef(1),
-        name: "Faderfox Test"
+        name: "Test Controller"
     )
 
     func availableSources() -> [MIDISourceDescriptor] {
@@ -87,6 +87,22 @@ private func drainMainQueue() async {
             continuation.resume()
         }
     }
+}
+
+@Test("A missing controller selection falls back to the first available source")
+@MainActor
+func missingControllerSelectionUsesFirstSource() {
+    let defaults = makeDefaults()
+    defaults.set(999, forKey: "selectedSourceID")
+
+    let model = AppModel(
+        engine: RecordingMIDIEngine(),
+        defaults: defaults
+    )
+
+    #expect(model.selectedSourceID == 1)
+    #expect(model.selectedSourceName == "Test Controller")
+    #expect(model.isConnected)
 }
 
 @Test("Activation waits for the physical fader position")

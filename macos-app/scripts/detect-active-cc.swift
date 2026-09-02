@@ -1,7 +1,10 @@
 import CoreMIDI
 import Foundation
 
-let requestedName = CommandLine.arguments.dropFirst().first ?? "Faderfox UC4"
+guard let requestedName = CommandLine.arguments.dropFirst().first else {
+    fputs("Usage: detect-active-cc.swift <controller name>\n", stderr)
+    exit(64)
+}
 let timeoutSeconds = 30
 
 func endpointName(_ endpoint: MIDIEndpointRef) -> String {
@@ -115,7 +118,7 @@ guard MIDIClientCreate("MK CC Detector" as CFString, nil, nil, &client) == noErr
 
 MIDIInputPortCreateWithBlock(
     client,
-    "Faderfox Input" as CFString,
+    "Controller Input" as CFString,
     &inputPort
 ) { packetList, _ in
     var packet = packetList.pointee.packet
