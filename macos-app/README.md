@@ -18,7 +18,9 @@ software depends on its MIDI input and MIDI Learn implementation.
 
 For Ableton Live, enable **Remote** for the virtual `MK Crossfader` input under
 **Settings > Link, Tempo & MIDI**, then map each `Parameter` target through
-Live's MIDI Map mode.
+Live's MIDI Map mode. One physical fader can then control several Live
+parameters, with independent ranges and directions for every mapping. See the
+[Ableton Live setup guide](../docs/ABLETON_SETUP.md) for a complete example.
 
 ## Features
 

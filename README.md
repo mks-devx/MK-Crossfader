@@ -26,6 +26,11 @@ with any MIDI controller that sends a standard, assignable MIDI CC:
   Controller instance to Target instances without changing Maschine's mixer
   faders.
 
+> **Ableton Live multi-control:** the native app can turn one physical MIDI
+> fader or knob into a coordinated macro for several Live parameters. Each
+> mapped parameter can have its own direction, range, response shape, and
+> Return Value. Max for Live is not required.
+
 The native app is broader than a conventional crossfader. It can create
 coordinated performance transitions or work as a custom sound-design macro:
 one MIDI fader or knob can move multiple learned parameters together, while
@@ -46,6 +51,31 @@ require, configure, or communicate with the VST3.
 Public installers contain both products, the licence, third-party notices, and
 the setup guide. The app and VST3 remain independent after installation.
 Source maintainers can also create a separate ad-hoc signed local-test package.
+
+## Ableton Live Multi-Control
+
+The native app receives one MIDI CC from the hardware controller and sends a
+separate CC for every configured target through its virtual **MK Crossfader**
+MIDI input. Ableton Live can map those outputs to different parameters.
+
+For example, moving one physical fader can simultaneously:
+
+- open an Auto Filter through a restricted range;
+- increase a reverb send;
+- reduce delay feedback in the opposite direction; and
+- trim Utility Gain to keep the transition controlled.
+
+Use **Parameter** targets in **Range** mode, then set each target's Left, Right,
+Shape, and Return Value independently. This works well for performance
+transitions, effect builds, and repeatable sound-design movements without
+creating a Max for Live device.
+
+Ableton stores the MIDI mappings inside the Live Set. The app does not inspect
+the Set or read parameter values back from Live, so Return Value is a value you
+configure rather than the parameter's previously stored value.
+
+See the [Ableton Live setup guide](docs/ABLETON_SETUP.md) for the complete
+example and routing steps.
 
 ## App Preview
 
@@ -72,6 +102,7 @@ Source maintainers can also create a separate ad-hoc signed local-test package.
 | Crossfade without inserting a plug-in on every target | Yes | No |
 | Keep Maschine mixer faders untouched | No | Yes |
 | Control filters, sends, or other learned parameters | Yes | No |
+| Control several Ableton parameters from one hardware fader | Yes | No |
 | Requires the other MK Crossfader product | No | No |
 | Exact plug-in unity at 0.0 dB | No | Yes |
 
@@ -114,7 +145,8 @@ For the MIDI app with Ableton Live or other MIDI Learn software:
 
 In Ableton Live, enable **Remote** for the **MK Crossfader** input under
 **Settings > Link, Tempo & MIDI**, then use Live's MIDI Map mode for each
-destination.
+destination. The complete process is documented in the
+[Ableton Live setup guide](docs/ABLETON_SETUP.md).
 
 The destination must expose the parameter to MIDI Learn. The app does not scan
 other software, control arbitrary plug-in parameters directly, or rewrite host
