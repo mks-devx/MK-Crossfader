@@ -20,8 +20,9 @@
 
 ### Packaging
 
-- Added a combined, script-free macOS installer pipeline for the app, VST3,
-  licence, notices, and installation documentation.
+- Added a combined macOS installer pipeline for the app, VST3, licence,
+  notices, and installation documentation, without preinstall or postinstall
+  scripts.
 - Added automated release privacy, metadata, architecture, signature, and
   network-API checks.
 - Added the Developer ID signed and Apple-notarised 0.2.8 installer for the app,
