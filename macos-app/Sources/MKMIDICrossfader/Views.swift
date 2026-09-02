@@ -56,6 +56,9 @@ private enum PresetSelection: Hashable {
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    @AppStorage(AppActivationPolicy.showDockIconDefaultsKey)
+    private var showDockIcon = true
+    @StateObject private var launchAtLogin = LaunchAtLoginController()
     @State private var showsAdvanced = false
     @State private var selectedPreset: PresetSelection?
     @State private var showsSavePresetAlert = false
@@ -101,6 +104,10 @@ struct SettingsView: View {
                                     : "MIDI channel used by all target mappings"
                             )
 
+                            Spacer()
+                        }
+
+                        HStack(spacing: 28) {
                             Toggle(
                                 "Reverse fader",
                                 isOn: $model.isTravelReversed
@@ -109,7 +116,33 @@ struct SettingsView: View {
                             .disabled(model.isEnabled)
                             .help("Reverse the physical left and right direction")
 
+                            Toggle("Show in Dock", isOn: $showDockIcon)
+                                .toggleStyle(.switch)
+                                .help("Show the app in the Dock and app switcher")
+
+                            Toggle("Launch at Login", isOn: launchAtLoginBinding)
+                                .toggleStyle(.switch)
+                                .disabled(!launchAtLogin.isAvailable)
+                                .help("Start the app when you sign in to macOS")
+
                             Spacer()
+                        }
+
+                        if let message = launchAtLogin.statusMessage {
+                            HStack(spacing: 10) {
+                                Label(message, systemImage: "info.circle")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Spacer()
+
+                                if launchAtLogin.requiresApproval {
+                                    Button("Open Login Items") {
+                                        launchAtLogin.openSystemSettings()
+                                    }
+                                    .controlSize(.small)
+                                }
+                            }
                         }
 
                         HStack(spacing: 18) {
@@ -133,12 +166,32 @@ struct SettingsView: View {
                     Label("Advanced", systemImage: "slider.horizontal.3")
                         .font(.headline)
                 }
+
+                HStack(spacing: 3) {
+                    Text("Made by")
+                    Link(
+                        "Mike Konstantinidis",
+                        destination: URL(string: "https://konstantinidis.net/")!
+                    )
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .help("Open konstantinidis.net")
+                }
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .padding(24)
         }
         .frame(width: 880, height: 780)
         .background(Color(nsColor: .windowBackgroundColor))
-        .tint(Color(rgbHex: "D92D2D"))
+        .tint(Color(rgbHex: "747980"))
+        .onAppear {
+            launchAtLogin.refresh()
+        }
+        .onChange(of: showDockIcon) { _, isVisible in
+            AppActivationPolicy.apply(showDockIcon: isVisible)
+        }
         .alert("Save Preset", isPresented: $showsSavePresetAlert) {
             TextField("Preset name", text: $presetName)
             Button("Cancel", role: .cancel) {
@@ -536,9 +589,16 @@ struct SettingsView: View {
         )
     }
 
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { launchAtLogin.isEnabled },
+            set: { launchAtLogin.setEnabled($0) }
+        )
+    }
+
     private var statusColor: Color {
         if model.isEnabled, model.canActivate {
-            return Color(rgbHex: "D92D2D")
+            return Color(rgbHex: "F3F3F1")
         }
         if model.isLearning {
             return Color(rgbHex: "8A8F96")
@@ -749,7 +809,7 @@ private struct TargetRow: View {
         case .sideB:
             return Color(rgbHex: model.sideBColorHex)
         case .range:
-            return Color(rgbHex: "D92D2D")
+            return Color(rgbHex: "8A8F96")
         case .off:
             return .secondary
         }
@@ -860,13 +920,11 @@ private struct AppLogo: View {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(Color(rgbHex: "17191C"))
 
-            Image(systemName: "arrow.left.arrow.right")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
-
-            Capsule()
-                .fill(Color(rgbHex: "D92D2D"))
-                .frame(width: 3, height: 19)
+            RouteMark(
+                leftColor: Color(rgbHex: "F3F3F1"),
+                rightColor: Color(rgbHex: "88888C")
+            )
+            .frame(width: 31, height: 20)
         }
         .frame(width: 40, height: 40)
         .overlay {

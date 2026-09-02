@@ -8,6 +8,9 @@
 - Curves, minimum levels, restore behaviour, MIDI Learn, colours, and user
   presets.
 - Startup pause, mapping safeguards, controller refresh, and regression tests.
+- Persistent menu-bar access, an optional Dock icon, and optional Launch at
+  Login registration through macOS.
+- New monochrome route-mark identity and linked creator credit.
 
 ### MK Crossfader VST3 0.2.8
 
@@ -21,3 +24,5 @@
   licence, notices, and installation documentation.
 - Added automated release privacy, metadata, architecture, signature, and
   network-API checks.
+- Published source and setup documentation as an early open-source preview;
+  unsigned local-test binaries remain excluded from public distribution.

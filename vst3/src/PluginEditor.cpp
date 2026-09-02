@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cmath>
+#include <initializer_list>
 
 namespace {
 
@@ -41,6 +42,71 @@ juce::Colour parameterColour(
         juce::roundToInt(rawParameter(state, id))
     ) & 0x00ffffffu;
     return juce::Colour(0xff000000u | rgb);
+}
+
+void drawRouteMark(
+    juce::Graphics& graphics,
+    juce::Rectangle<float> bounds
+) {
+    constexpr auto sourceWidth = 544.0f;
+    constexpr auto sourceHeight = 328.0f;
+    const auto scale = juce::jmin(
+        bounds.getWidth() / sourceWidth,
+        bounds.getHeight() / sourceHeight
+    );
+    const auto left = bounds.getCentreX() - sourceWidth * scale * 0.5f;
+    const auto top = bounds.getCentreY() - sourceHeight * scale * 0.5f;
+    const auto point = [left, top, scale](float x, float y) {
+        return juce::Point<float>(left + x * scale, top + y * scale);
+    };
+    const auto fillPolygon = [&graphics, &point](
+        juce::Colour colour,
+        std::initializer_list<juce::Point<float>> points
+    ) {
+        auto iterator = points.begin();
+        if (iterator == points.end()) {
+            return;
+        }
+        juce::Path path;
+        path.startNewSubPath(point(iterator->x, iterator->y));
+        for (++iterator; iterator != points.end(); ++iterator) {
+            path.lineTo(point(iterator->x, iterator->y));
+        }
+        path.closeSubPath();
+        graphics.setColour(colour);
+        graphics.fillPath(path);
+    };
+
+    const auto leftColour = juce::Colour(text);
+    const auto rightColour = juce::Colour(0xff88888c);
+    fillPolygon(leftColour, {
+        { 0.0f, 0.0f }, { 234.0f, 0.0f }, { 298.0f, 74.0f },
+        { 242.0f, 74.0f }, { 210.0f, 40.0f }, { 0.0f, 40.0f }
+    });
+    fillPolygon(leftColour, {
+        { 0.0f, 104.0f }, { 182.0f, 104.0f }, { 230.0f, 152.0f },
+        { 230.0f, 180.0f }, { 206.0f, 180.0f }, { 166.0f, 144.0f },
+        { 0.0f, 144.0f }
+    });
+    graphics.setColour(leftColour);
+    graphics.fillRect(juce::Rectangle<float>(
+        left + 234.0f * scale,
+        top + 102.0f * scale,
+        72.0f * scale,
+        78.0f * scale
+    ));
+    fillPolygon(rightColour, {
+        { 330.0f, 102.0f }, { 348.0f, 120.0f }, { 544.0f, 120.0f },
+        { 544.0f, 146.0f }, { 330.0f, 146.0f }
+    });
+    fillPolygon(rightColour, {
+        { 330.0f, 186.0f }, { 544.0f, 186.0f }, { 544.0f, 230.0f },
+        { 352.0f, 230.0f }, { 330.0f, 208.0f }
+    });
+    fillPolygon(rightColour, {
+        { 234.0f, 208.0f }, { 268.0f, 208.0f }, { 344.0f, 284.0f },
+        { 544.0f, 284.0f }, { 544.0f, 328.0f }, { 328.0f, 328.0f }
+    });
 }
 
 } // namespace
@@ -436,22 +502,12 @@ MKCrossfaderEditor::~MKCrossfaderEditor() {
 
 void MKCrossfaderEditor::paint(juce::Graphics& graphics) {
     graphics.fillAll(juce::Colour(background));
-    graphics.setColour(juce::Colour(brandRed));
-    graphics.setFont(juce::FontOptions(19.0f, juce::Font::bold));
-    graphics.drawText(
-        "MK",
-        24,
-        15,
-        32,
-        30,
-        juce::Justification::centredLeft,
-        false
-    );
+    drawRouteMark(graphics, { 24.0f, 16.0f, 54.0f, 32.0f });
     graphics.setColour(juce::Colour(text));
-    graphics.setFont(juce::FontOptions(21.0f, juce::Font::bold));
+    graphics.setFont(juce::FontOptions(20.0f, juce::Font::bold));
     graphics.drawText(
-        "CROSSFADER",
-        60,
+        "MK Crossfader",
+        94,
         15,
         240,
         30,

@@ -2,9 +2,10 @@
 
 ## MK MIDI Crossfader
 
-The Swift menu-bar app owns the physical MIDI input and creates one virtual
-CoreMIDI source named `MK Crossfader`. It converts one absolute MIDI CC into a
-separate CC for every configured target.
+The Swift app owns the physical MIDI input and creates one virtual CoreMIDI
+source named `MK Crossfader`. It keeps a persistent menu-bar control and can
+optionally appear in the Dock or register with macOS to launch at login. It
+converts one absolute MIDI CC into a separate CC for every configured target.
 
 Maschine does not expose Groups or Sounds as addressable MIDI destinations.
 Each app target therefore needs a one-time MIDI Learn assignment in the

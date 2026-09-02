@@ -4,16 +4,29 @@
   <img src="macos-app/packaging/Resources/MKCrossfaderLogo.png" width="128" alt="MK Crossfader logo">
 </p>
 
-Created by [Mike Konstantinidis](https://github.com/mks-devx) while building his
+Created by [Mike Konstantinidis](https://konstantinidis.net/) while building his
 own Maschine-based live set, and released free for the community.
 
-MK Crossfader is a free, open-source pair of macOS tools for expressive
-crossfading in Maschine 3:
+> **Early open-source preview:** the source is available now. Signed and
+> notarised installers will follow after release testing. No unsigned public
+> binaries are distributed from this repository.
 
-- **MK MIDI Crossfader** is a native menu-bar app that maps one physical MIDI
-  fader to Maschine mixer levels or other MIDI-learnable parameters.
-- **MK Crossfader VST3** is a self-contained plug-in that links one Controller
-  instance to Target instances without changing Maschine's mixer faders.
+MK Crossfader is a free, open-source pair of macOS performance tools for
+Maschine 3:
+
+- **MK MIDI Crossfader** is a native macOS app with a persistent menu-bar
+  control that maps one physical MIDI control to multiple Maschine targets. It
+  can control mixer levels, filters, sends, effects, or any other parameter
+  available to Maschine MIDI Learn.
+- **MK Crossfader VST3** is a dedicated audio crossfader that links one
+  Controller instance to Target instances without changing Maschine's mixer
+  faders.
+
+The native app is broader than a conventional crossfader. It can create
+coordinated performance transitions or work as a custom sound-design macro:
+one MIDI fader or knob can move multiple learned parameters together, while
+each target keeps its own direction, range, response shape, and restore value.
+The VST3 intentionally stays focused on gain transitions.
 
 The products are completely independent and can be used separately. The VST3
 does not require the app to be installed or running, and the app does not
@@ -22,8 +35,9 @@ require, configure, or communicate with the VST3.
 Either workflow can be driven by any MIDI controller that sends a standard,
 assignable MIDI CC. No specific controller model is required.
 
-> Public Developer ID signed and notarised binaries are not available yet.
-> The repository includes a local-test installer pipeline for release testing.
+The repository includes a local-test installer pipeline for maintainers. It is
+not a public download and is not a substitute for Developer ID signing and
+Apple notarisation.
 
 ## App Preview
 
@@ -62,6 +76,10 @@ For the MIDI app:
 3. Add a target, put the matching Maschine parameter into MIDI Learn, and press
    **Send Learn**.
 4. Assign the target to A, B, Range, or Off.
+
+The app appears in both the Dock and menu bar by default. Disable **Show in
+Dock** under **Advanced** to keep it available only from the menu bar. Enable
+**Launch at Login** there to start it automatically when signing in to macOS.
 
 See [Maschine setup](docs/MASCHINE_SETUP.md) for the complete routing and
 recovery workflow.

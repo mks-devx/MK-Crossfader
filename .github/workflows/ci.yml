@@ -12,6 +12,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  privacy:
+    name: Public history privacy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Audit public history
+        run: bash scripts/privacy-audit.sh
+
   macos-app:
     name: macOS app
     runs-on: macos-15

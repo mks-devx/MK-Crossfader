@@ -28,5 +28,7 @@
     <true/>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Made by Mike Konstantinidis</string>
 </dict>
 </plist>

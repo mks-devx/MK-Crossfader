@@ -12,6 +12,11 @@ the app's bundle identifier. Nothing is uploaded.
 
 The app does not record or transmit audio.
 
+If **Launch at Login** is enabled, the app registers itself with macOS through
+`SMAppService`. It does not install a helper process, background daemon, or
+separate login item. Disabling the option unregisters the app from macOS login
+items.
+
 ## MK Crossfader VST3
 
 Plug-in parameters and route names are stored by the host as part of the

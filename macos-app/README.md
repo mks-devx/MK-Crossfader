@@ -1,7 +1,8 @@
 # MK MIDI Crossfader
 
-MK MIDI Crossfader is a native macOS menu-bar app that converts one physical
-MIDI CC into separate control values for learned Maschine parameters.
+MK MIDI Crossfader is a native macOS app with a persistent menu-bar control. It
+converts one physical MIDI CC into separate control values for learned Maschine
+parameters.
 
 ## Features
 
@@ -14,6 +15,10 @@ MIDI CC into separate control values for learned Maschine parameters.
 - Workflow-inspired Akai Force A/B Mix and Octatrack Scene Morph starting points
 - Restore & Pause, startup pause, target uniqueness checks, and controller
   hot-plug refresh
+- Dock and app-switcher presence that can be disabled under **Advanced** while
+  keeping the menu-bar control available
+- Optional **Launch at Login** registration through macOS Service Management;
+  no helper process or background daemon is installed
 
 The named hardware presets are workflow starting points, not hardware
 emulations.

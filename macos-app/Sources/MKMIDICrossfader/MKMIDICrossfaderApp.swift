@@ -1,8 +1,18 @@
 import SwiftUI
 
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        AppActivationPolicy.apply(
+            showDockIcon: AppActivationPolicy.shouldShowDockIcon()
+        )
+    }
+}
+
 @main
 @MainActor
 struct MKMIDICrossfaderApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var model = AppModel()
 
     var body: some Scene {
@@ -15,11 +25,7 @@ struct MKMIDICrossfaderApp: App {
         MenuBarExtra {
             MenuBarContent(model: model)
         } label: {
-            Image(
-                systemName: model.isEnabled
-                    ? "arrow.left.arrow.right.circle.fill"
-                    : "arrow.left.arrow.right.circle"
-            )
+            MenuBarRouteMark(isActive: model.isEnabled)
         }
         .menuBarExtraStyle(.menu)
     }

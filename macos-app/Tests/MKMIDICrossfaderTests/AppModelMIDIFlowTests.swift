@@ -1,5 +1,6 @@
 import CoreMIDI
 import Foundation
+import ServiceManagement
 import Testing
 @testable import MKMIDICrossfader
 
@@ -51,6 +52,23 @@ private final class RecordingMIDIEngine: MIDIEngineProtocol {
 }
 
 @MainActor
+private final class FakeLaunchAtLoginService: LaunchAtLoginServicing {
+    var status: SMAppService.Status = .notRegistered
+    var registerCallCount = 0
+    var unregisterCallCount = 0
+
+    func register() throws {
+        registerCallCount += 1
+        status = .enabled
+    }
+
+    func unregister() throws {
+        unregisterCallCount += 1
+        status = .notRegistered
+    }
+}
+
+@MainActor
 private func makeDefaults() -> UserDefaults {
     let name = "MKMIDICrossfaderTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: name)!
@@ -95,6 +113,60 @@ func activationWaitsForInput() async {
     #expect(engine.sentMessages.count == 2)
     #expect(engine.sentMessages[0].value == 95)
     #expect(engine.sentMessages[1].value == 0)
+}
+
+@Test("Dock icon is visible by default and the preference is respected")
+@MainActor
+func dockIconPreference() {
+    let defaults = makeDefaults()
+
+    #expect(AppActivationPolicy.shouldShowDockIcon(defaults: defaults))
+    #expect(AppActivationPolicy.policy(showDockIcon: true) == .regular)
+
+    defaults.set(false, forKey: AppActivationPolicy.showDockIconDefaultsKey)
+    #expect(!AppActivationPolicy.shouldShowDockIcon(defaults: defaults))
+    #expect(AppActivationPolicy.policy(showDockIcon: false) == .accessory)
+}
+
+@Test("Menu-bar artwork is a correctly sized template image")
+@MainActor
+func menuBarArtwork() {
+    let icon = BrandAssets.menuBarIcon
+
+    #expect(icon.isTemplate)
+    #expect(icon.size.width == 20)
+    #expect(icon.size.height == 13)
+    #expect(icon.accessibilityDescription == "MK Crossfader")
+}
+
+@Test("Launch at Login follows the macOS service status")
+@MainActor
+func launchAtLoginStatus() {
+    let service = FakeLaunchAtLoginService()
+    let controller = LaunchAtLoginController(service: service)
+
+    #expect(!controller.isEnabled)
+    #expect(controller.statusMessage == nil)
+
+    controller.setEnabled(true)
+    #expect(controller.isEnabled)
+    #expect(service.registerCallCount == 1)
+
+    controller.setEnabled(false)
+    #expect(!controller.isEnabled)
+    #expect(service.unregisterCallCount == 1)
+
+    service.status = .requiresApproval
+    controller.refresh()
+    #expect(!controller.isEnabled)
+    #expect(controller.isAvailable)
+    #expect(controller.requiresApproval)
+    #expect(controller.statusMessage?.contains("approval") == true)
+
+    service.status = .notFound
+    controller.refresh()
+    #expect(!controller.isAvailable)
+    #expect(!controller.requiresApproval)
 }
 
 @Test("Range output follows the fader and pause sends Restore")

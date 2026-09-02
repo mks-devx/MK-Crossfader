@@ -5,29 +5,30 @@ set -euo pipefail
 ROOT_DIR="${0:A:h:h}"
 SOURCE="$ROOT_DIR/packaging/Resources/MKCrossfaderLogo.png"
 OUTPUT="$ROOT_DIR/packaging/Resources/MKCrossfader.icns"
+RENDERER="$ROOT_DIR/scripts/render-icon.swift"
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/mk-crossfader-icon.XXXXXX")"
 ICONSET="$WORK_DIR/MKCrossfader.iconset"
+MODULE_CACHE="$ROOT_DIR/.build/icon-module-cache"
 
 trap 'rm -rf "$WORK_DIR"' EXIT
 
 mkdir -p "$ICONSET"
+mkdir -p "$MODULE_CACHE"
 
-make_icon() {
-    local size="$1"
-    local output="$2"
-    /usr/bin/sips -z "$size" "$size" "$SOURCE" --out "$ICONSET/$output" >/dev/null
-}
-
-make_icon 16 icon_16x16.png
-make_icon 32 icon_16x16@2x.png
-make_icon 32 icon_32x32.png
-make_icon 64 icon_32x32@2x.png
-make_icon 128 icon_128x128.png
-make_icon 256 icon_128x128@2x.png
-make_icon 256 icon_256x256.png
-make_icon 512 icon_256x256@2x.png
-make_icon 512 icon_512x512.png
-make_icon 1024 icon_512x512@2x.png
+CLANG_MODULE_CACHE_PATH="$MODULE_CACHE" \
+SWIFT_MODULECACHE_PATH="$MODULE_CACHE" \
+    /usr/bin/xcrun swift "$RENDERER" \
+    1024 "$SOURCE" \
+    16 "$ICONSET/icon_16x16.png" \
+    32 "$ICONSET/icon_16x16@2x.png" \
+    32 "$ICONSET/icon_32x32.png" \
+    64 "$ICONSET/icon_32x32@2x.png" \
+    128 "$ICONSET/icon_128x128.png" \
+    256 "$ICONSET/icon_128x128@2x.png" \
+    256 "$ICONSET/icon_256x256.png" \
+    512 "$ICONSET/icon_256x256@2x.png" \
+    512 "$ICONSET/icon_512x512.png" \
+    1024 "$ICONSET/icon_512x512@2x.png"
 
 /usr/bin/iconutil -c icns "$ICONSET" -o "$OUTPUT"
 print "$OUTPUT"
