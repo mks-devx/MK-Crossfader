@@ -438,11 +438,13 @@ void testEditorParameterBindings() {
 
     requireInteractive(*editor, *unity, "Unity control");
     unity->triggerClick();
-    juce::Timer::callAfterDelay(
-        50,
-        [] {
-            juce::MessageManager::getInstance()->stopDispatchLoop();
-        }
+    require(
+        juce::MessageManager::callAsync(
+            [] {
+                juce::MessageManager::getInstance()->stopDispatchLoop();
+            }
+        ),
+        "Could not queue the Unity click completion marker"
     );
     juce::MessageManager::getInstance()->runDispatchLoop();
     require(unity->getToggleState(), "Unity control did not toggle after its click");
