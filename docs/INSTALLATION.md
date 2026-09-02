@@ -8,7 +8,7 @@ Close Maschine and any other plug-in hosts before installing. To verify a
 download in Terminal, run the checksum command from the download folder:
 
 ```zsh
-shasum -a 256 -c MK-Crossfader-<version>.pkg.sha256
+shasum -a 256 -c MK-Crossfader-0.2.8.pkg.sha256
 ```
 
 Open the package and follow the installer. macOS asks for an administrator
