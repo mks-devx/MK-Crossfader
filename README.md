@@ -13,8 +13,9 @@ own Maschine-based live set, and released free for the community.
 > unsigned public binaries are distributed from this repository.
 
 MK Crossfader is a free, open-source macOS toolkit for multi-parameter MIDI
-control and linked audio crossfading. Maschine 3 is its primary documented and
-tested workflow:
+control and linked audio crossfading. It is designed and tested with Maschine 3
+and supported Maschine hardware in Controller mode, while remaining compatible
+with any MIDI controller that sends a standard, assignable MIDI CC:
 
 - **MK MIDI Crossfader** is a native macOS app with a persistent menu-bar
   control that maps one physical MIDI control to multiple MIDI CC targets. It
@@ -40,9 +41,6 @@ MIDI Learn implementation.
 The products are completely independent and can be used separately. The VST3
 does not require the app to be installed or running, and the app does not
 require, configure, or communicate with the VST3.
-
-Either workflow can be driven by any MIDI controller that sends a standard,
-assignable MIDI CC. No specific controller model is required.
 
 Public installers contain both products, the licence, third-party notices, and
 the setup guide. The app and VST3 remain independent after installation.
