@@ -246,7 +246,7 @@ final class AppUpdateChecker: ObservableObject {
     private static var bundledVersion: String {
         Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "0.2.8"
+        ) as? String ?? "0.2.9"
     }
 
     private static func displayVersion(_ value: String) -> String {

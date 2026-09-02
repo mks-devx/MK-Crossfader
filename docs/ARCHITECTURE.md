@@ -50,8 +50,9 @@ audio signal passes through its plug-in instance.
 - App presets cannot configure VST3 instances.
 - VST3 sessions are not visible to the app.
 - Neither product rewrites Maschine routing.
-- The native app can target other MIDI Learn software through CoreMIDI, but
-  Maschine 3 remains the documented and tested 0.2.8 workflow.
+- The native app can target other MIDI Learn software through CoreMIDI. The
+  app and VST3 are both manually verified with Ableton Live, while Maschine 3
+  remains the primary documented hardware workflow for 0.2.9.
 - Both products run on the Mac. Maschine+ can control Maschine 3 on the Mac in
   Controller mode, but neither product runs inside Maschine+ standalone.
 - AU is not currently built or supported.

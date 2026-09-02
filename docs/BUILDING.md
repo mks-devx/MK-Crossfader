@@ -48,7 +48,7 @@ maintainer action:
 ```
 
 Without Apple Developer ID identities, this creates
-`dist/MK-Crossfader-0.2.8-local-test.pkg`. It contains the app, VST3, licence,
+`dist/MK-Crossfader-0.2.9-local-test.pkg`. It contains the app, VST3, licence,
 third-party notices, and installation notes. The build performs a release
 privacy audit and writes a SHA-256 checksum next to the package.
 

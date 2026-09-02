@@ -14,6 +14,11 @@ Scene gives every route explicit left and right endpoint gains.
 
 Targets use 15 ms gain smoothing and do not move host mixer faders.
 
+The VST3 also works in Ableton Live and other compatible macOS VST3 hosts. Put
+one Controller on the Master track, then put a Target after the audio source or
+effects on every track that should join the crossfade. All linked instances
+must use the same session and each Target must use a unique slot.
+
 ## Audio Requirement
 
 Each Target is an audio effect. It changes only the audio signal passing
@@ -37,6 +42,21 @@ it passes the Master audio unchanged and does not act as a master-volume fader.
 `UNITY` immediately returns linked Targets to 0.0 dB. Duplicate Controllers
 and duplicate Target slots are reported as conflicts. A Target that loses its
 Controller holds its last valid gain.
+
+## Ableton Live Routing
+
+1. Put one Controller on the Master track. It passes Master audio unchanged.
+2. Map its Crossfader parameter to the physical fader through Live's MIDI Map
+   mode.
+3. Put a Target after the instrument, sample player, or effects on every audio
+   path that should fade.
+4. Keep all linked instances on the same session and give every Target a unique
+   slot.
+5. Assign the routes to A, B, or Off in the Controller.
+
+The Target changes plug-in gain inside the audio path; it does not move Live's
+track fader. Save the Controller and Targets in the same Live Set so their
+roles, session, slots, and route assignments recall together.
 
 ## Build
 

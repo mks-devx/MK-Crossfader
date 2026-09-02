@@ -22,9 +22,9 @@ with any MIDI controller that sends a standard, assignable MIDI CC:
   control that maps one physical MIDI control to multiple MIDI CC targets. It
   can control levels, filters, sends, effects, or other parameters exposed to
   MIDI Learn by the destination software.
-- **MK Crossfader VST3** is a dedicated audio crossfader that links one
-  Controller instance to Target instances without changing Maschine's mixer
-  faders.
+- **MK Crossfader VST3** is a dedicated audio crossfader for Maschine 3,
+  Ableton Live, and other compatible macOS VST3 hosts. It links one Controller
+  instance to Target instances without changing the host's mixer faders.
 
 > **Ableton Live multi-control:** the native app can turn one physical MIDI
 > fader or knob into a coordinated macro for several Live parameters. Each
@@ -35,7 +35,8 @@ The native app is broader than a conventional crossfader. It can create
 coordinated performance transitions or work as a custom sound-design macro:
 one MIDI fader or knob can move multiple learned parameters together, while
 each target keeps its own direction, range, response shape, and Return Value.
-The VST3 intentionally stays focused on gain transitions.
+The VST3 intentionally stays focused on gain transitions and has also been
+manually verified in Ableton Live.
 
 Because the native app uses standard CoreMIDI, it can also work with other
 macOS software that enables the virtual **MK Crossfader** input and learns
@@ -103,6 +104,7 @@ example and routing steps.
 | Keep Maschine mixer faders untouched | No | Yes |
 | Control filters, sends, or other learned parameters | Yes | No |
 | Control several Ableton parameters from one hardware fader | Yes | No |
+| Crossfade several Ableton audio tracks without moving mixer faders | No | Yes |
 | Requires the other MK Crossfader product | No | No |
 | Exact plug-in unity at 0.0 dB | No | Yes |
 
@@ -119,6 +121,10 @@ For the independent VST3:
    to control.
 4. Give each Target a unique slot in the same session.
 5. Assign those routes to A, B, or Off in the Controller.
+
+The same VST3 structure works in Ableton Live: place the Controller on Master,
+place Targets after the audio source or effects on the tracks you want to fade,
+and keep every instance in the same session with a unique Target slot.
 
 Each Target is an audio effect and only changes audio that passes through that
 instance. It works with samples, loops, software instruments, and live audio;

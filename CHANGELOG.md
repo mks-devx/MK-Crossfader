@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-03 - 0.2.9
+
+### MK MIDI Crossfader
+
+- Documented and manually verified Ableton Live multi-control: one physical
+  fader or knob can drive several independently shaped MIDI Learn targets.
+- Clarified Return Value behaviour and general MIDI Learn compatibility.
+- Refined public copy, screenshots, and repository structure.
+
+### MK Crossfader VST3
+
+- Fixed editor interaction so role and other settings remain clickable in the
+  host plug-in window.
+- Added regression coverage for editor interaction.
+- Documented and manually verified Controller/Target routing in Ableton Live.
+
+### Packaging
+
+- Bumped the app, VST3, and combined installer to 0.2.9.
+- Retained the Developer ID signing, Apple notarisation, stapling, checksum,
+  payload audit, and public-history privacy gates.
+
 ## 2026-09-02 - Initial Public Release
 
 ### MK MIDI Crossfader 0.2.8

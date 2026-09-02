@@ -1,9 +1,15 @@
 # Ableton Live Setup
 
-MK MIDI Crossfader can turn one physical MIDI fader or knob into a coordinated
-multi-parameter control for Ableton Live. The native app receives one hardware
-CC and sends separate CC messages through its virtual `MK Crossfader` MIDI
-input. Each destination can move through a different range and direction.
+MK Crossfader supports two independent Ableton Live workflows:
+
+- **MK MIDI Crossfader** turns one physical MIDI fader or knob into a
+  coordinated multi-parameter control.
+- **MK Crossfader VST3** links one Controller to multiple audio Target
+  instances for crossfading without moving Live's mixer faders.
+
+The native app receives one hardware CC and sends separate CC messages through
+its virtual `MK Crossfader` MIDI input. Each destination can move through a
+different range and direction.
 
 This workflow uses Ableton Live's standard MIDI Map system. It does not require
 Max for Live or the MK Crossfader VST3.
@@ -58,6 +64,24 @@ the destination parameter and its mapping range.
   testing the mappings.
 - A crash, forced quit, or power loss cannot send final Return Values. Keep a
   neutral recovery control available before performance use.
+
+## VST3 Audio Crossfading
+
+The VST3 is a separate workflow and does not require the native app:
+
+1. Add one MK Crossfader VST3 to Live's Master track and select
+   **Controller**.
+2. Map its Crossfader parameter to the physical fader with Live's MIDI Map
+   mode.
+3. Add a Target instance after the instrument, sample player, or effects on
+   every audio path that should fade.
+4. Keep all instances on the same session and give each Target a unique slot.
+5. Assign the matching routes to A, B, or Off in the Controller.
+
+The Controller passes Master audio unchanged. Each Target applies smoothed gain
+inside its own plug-in instance, so Live's mixer faders remain where they were
+set. Save all Controller and Target instances in the same Live Set so their
+roles, session, slots, and route assignments recall together.
 
 ## Suitable Uses
 
