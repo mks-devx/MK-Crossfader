@@ -54,6 +54,12 @@ Source maintainers can also create a separate ad-hoc signed local-test package.
   <img src="docs/images/mk-midi-crossfader-app.png" width="820" alt="MK MIDI Crossfader showing controller mapping, targets, and crossfade controls">
 </p>
 
+## VST3 Preview
+
+<p align="center">
+  <img src="docs/images/mk-crossfader-vst3.png" width="820" alt="MK Crossfader VST3 Controller showing crossfade modes and target routes in Maschine 3">
+</p>
+
 ## Choose A Workflow
 
 | Need | MIDI app | VST3 |
