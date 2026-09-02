@@ -33,5 +33,5 @@ latest GitHub Release, but it does not check in the background or automatically
 download or install anything. The VST3 does not access the network.
 
 Use GitHub's **Watch** menu to follow repository activity or release
-notifications. When signed and notarised installers become available, they will
-be published through the repository's GitHub Releases page.
+notifications. Signed and notarised installers are published only through the
+repository's GitHub Releases page.

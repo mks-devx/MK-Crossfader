@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-Security fixes are applied to the latest source on the default branch. No
-public binary release is currently supported.
+Security fixes are applied to the latest source on the default branch and the
+latest public binary release.
 
 ## Reporting
 

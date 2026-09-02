@@ -7,9 +7,10 @@
 Created by [Mike Konstantinidis](https://konstantinidis.net/) while building his
 own Maschine-based live set, and released free for the community.
 
-> **Early open-source preview:** the source is available now. Signed and
-> notarised installers will follow after release testing. No unsigned public
-> binaries are distributed from this repository.
+> **Binary releases:** Developer ID signed and Apple-notarised installers are
+> distributed only through the
+> [Releases page](https://github.com/mks-devx/MK-Crossfader/releases). No
+> unsigned public binaries are distributed from this repository.
 
 MK Crossfader is a free, open-source pair of macOS performance tools for
 Maschine 3:
@@ -35,9 +36,9 @@ require, configure, or communicate with the VST3.
 Either workflow can be driven by any MIDI controller that sends a standard,
 assignable MIDI CC. No specific controller model is required.
 
-The repository includes a local-test installer pipeline for maintainers. It is
-not a public download and is not a substitute for Developer ID signing and
-Apple notarisation.
+Public installers contain both products, the licence, third-party notices, and
+the setup guide. The app and VST3 remain independent after installation.
+Source maintainers can also create a separate ad-hoc signed local-test package.
 
 ## App Preview
 

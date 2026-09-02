@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-09-02 - Initial Public Source Release
+## 2026-09-02 - Initial Public Release
 
 ### MK MIDI Crossfader 0.2.8
 
@@ -24,5 +24,6 @@
   licence, notices, and installation documentation.
 - Added automated release privacy, metadata, architecture, signature, and
   network-API checks.
-- Published source and setup documentation as an early open-source preview;
-  unsigned local-test binaries remain excluded from public distribution.
+- Added the Developer ID signed and Apple-notarised 0.2.8 installer for the app,
+  VST3, licence, notices, and setup documentation.
+- Kept ad-hoc signed local-test binaries separate from public distribution.

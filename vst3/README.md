@@ -49,9 +49,9 @@ signature, and runs the DSP/state, cross-process, and JUCE host validation
 tests. By default, CMake fetches JUCE 8.0.15. Set `JUCE_SOURCE_DIR` to reuse a
 local JUCE checkout.
 
-The output is under `vst3/build-universal/`. The bundle is suitable for local
-testing, not public binary distribution, until Developer ID signing and Apple
-notarisation are completed.
+The output is under `vst3/build-universal/`. This source build is suitable for
+local testing. For normal installation, use the Developer ID signed and
+Apple-notarised package from the repository's Releases page.
 
 See [Maschine setup](../docs/MASCHINE_SETUP.md) and
 [building](../docs/BUILDING.md).

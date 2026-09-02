@@ -43,9 +43,9 @@ swift test --package-path macos-app
 ./macos-app/scripts/build-app.sh
 ```
 
-The app and zip archive are written to `macos-app/build/`. The build is
-ad-hoc signed for local testing; it is not a public Developer ID signed or
-notarised distribution.
+The app and zip archive are written to `macos-app/build/`. This source build is
+ad-hoc signed for local testing. For normal installation, use the Developer ID
+signed and Apple-notarised package from the repository's Releases page.
 
 The checked-in icon is used by normal builds. Maintainers can regenerate it
 with `./macos-app/scripts/build-icon.sh` using standard macOS tools.

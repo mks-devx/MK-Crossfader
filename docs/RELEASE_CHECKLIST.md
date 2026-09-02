@@ -36,8 +36,9 @@ Source publication and binary distribution are separate release gates.
   downloadable artifacts.
 - Keep the matching source tag publicly available under the project licence.
 
-## Current State
+## Operational Validation
 
-Project tests and local ad-hoc signed builds pass. Developer ID signing,
-notarisation, clean-Mac installation, and a full physical live rehearsal remain
-required before official binary downloads should be published.
+The release script must not finish unless signing, Apple notarisation, ticket
+stapling, Gatekeeper assessment, checksums, and the final payload audit pass.
+These automated gates do not replace a browser-download check on a clean Mac or
+a physical controller rehearsal with the intended live template.
