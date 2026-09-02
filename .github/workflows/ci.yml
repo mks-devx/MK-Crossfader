@@ -14,11 +14,11 @@ concurrency:
 jobs:
   macos-app:
     name: macOS app
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 20
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Run Swift tests
         run: swift test --package-path macos-app
       - name: Build app bundle
@@ -26,11 +26,11 @@ jobs:
 
   vst3:
     name: VST3
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 35
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Configure
         run: cmake -S vst3 -B vst3/build-ci -DCMAKE_BUILD_TYPE=Release
       - name: Build
