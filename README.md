@@ -1,10 +1,11 @@
 <div align="center">
   <img src="macos-app/packaging/Resources/MKCrossfaderLogo.png" width="112" alt="MK Crossfader logo">
   <h1>MK Crossfader</h1>
-  <p><strong>Audio crossfading and MIDI multi-mapping for live performance</strong></p>
+  <p><strong>Audio Crossfading + MIDI Multi-Mapping</strong></p>
   <p>
     Created for Maschine 3 on macOS with Maschine+ in Controller mode.<br>
-    Also verified with Ableton Live and compatible macOS MIDI and VST3 hosts.
+    Also verified with Ableton Live. Other macOS DAWs may work through standard
+    MIDI Learn or VST3 hosting, but have not yet been tested.
   </p>
   <p>
     <a href="https://github.com/mks-devx/MK-Crossfader/releases/latest"><img src="https://img.shields.io/github/v/release/mks-devx/MK-Crossfader?display_name=tag&amp;sort=semver&amp;style=flat-square&amp;color=555555" alt="Latest release"></a>
@@ -32,7 +33,7 @@ The project provides two workflows:
 | --- | --- |
 | Turns one incoming MIDI CC into multiple independently shaped CC outputs. | Links one Controller instance to multiple audio Target instances. |
 | Controls levels, filters, sends, effects, and other MIDI-learnable parameters. | Applies smoothed audio gain while leaving the host's mixer faders untouched. |
-| Works with Maschine 3, Ableton Live, and other macOS software that supports MIDI Learn. | Works with Maschine 3, Ableton Live, and other compatible macOS VST3 hosts. |
+| Tested with Maschine 3 and Ableton Live; other macOS MIDI Learn software may also work. | Tested with Maschine 3 and Ableton Live; other compatible macOS VST3 hosts may also work. |
 
 The installer includes both components. They can be used separately, and any
 MIDI controller that sends an assignable MIDI CC can provide the physical
@@ -141,6 +142,10 @@ In Ableton Live, enable **Remote** for the **MK Crossfader** input under
 | MK MIDI Crossfader | macOS 14 or later; CoreMIDI destination with MIDI Learn | Maschine 3, Ableton Live, and other MIDI-learnable macOS software |
 | MK Crossfader VST3 | macOS 13 or later; compatible VST3 host | Maschine 3, Ableton Live, and other macOS VST3 hosts |
 | Hardware control | Assignable MIDI CC | Maschine+ in Controller mode or another MIDI controller |
+
+Maschine 3 and Ableton Live are the currently tested hosts. Other macOS DAWs
+may work if they expose standard MIDI Learn and/or support VST3, but their
+compatibility has not been verified yet.
 
 The Maschine-calibrated **Level** target requires Maschine 3. General
 **Parameter** targets can be used with other destinations that expose controls
