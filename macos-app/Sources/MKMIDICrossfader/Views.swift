@@ -802,8 +802,13 @@ private struct TargetRow: View {
                 Button {
                     model.sendMappingMessage(to: target.id)
                 } label: {
-                    Label("Send Learn", systemImage: "paperplane")
+                    Label("Send Learn", systemImage: "paperplane.fill")
                 }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.roundedRectangle(radius: 6))
+                .tint(Color(rgbHex: "565B62"))
+                .foregroundStyle(Color(rgbHex: "F3F3F1"))
+                .accessibilityLabel("Send MIDI Learn for \(target.displayName)")
                 .help(
                     model.isEnabled
                         ? "Send a short MIDI Learn movement, then return to the current live value"

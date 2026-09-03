@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### MK MIDI Crossfader
+
+- Increased the contrast of each Send Learn action and strengthened its icon so
+  it remains easy to identify in dense target lists.
+
 ### Documentation
 
 - Clarified that MK Crossfader was created primarily for live performance with
