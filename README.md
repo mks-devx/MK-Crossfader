@@ -4,16 +4,15 @@
   <p><strong>Audio Crossfading + MIDI Multi-Mapping</strong></p>
   <p>
     Created for Maschine 3 on macOS with Maschine+ in Controller mode.<br>
-    Also verified with Ableton Live. Other macOS DAWs may work through standard
+    Also tested with Ableton Live. Other macOS DAWs may work through standard
     MIDI Learn or VST3 hosting, but have not yet been tested.
   </p>
   <p>
-    <a href="https://github.com/mks-devx/MK-Crossfader/releases/latest"><img src="https://img.shields.io/github/v/release/mks-devx/MK-Crossfader?display_name=tag&amp;sort=semver&amp;style=flat-square&amp;color=555555" alt="Latest release"></a>
     <a href="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml"><img src="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-555555?style=flat-square" alt="AGPL-3.0 licence"></a>
   </p>
   <p>
-    <a href="#download-and-install">Download</a> ·
+    <a href="#download-and-install">Availability</a> ·
     <a href="docs/MASCHINE_SETUP.md">Maschine Setup</a> ·
     <a href="docs/ABLETON_SETUP.md">Ableton Live Setup</a> ·
     <a href="#documentation">Documentation</a>
@@ -21,6 +20,11 @@
 </div>
 
 ---
+
+> [!IMPORTANT]
+> **Installer downloads are temporarily unavailable.** The 0.2.8 and 0.2.9
+> packages have been withdrawn. A replacement will be published after signing,
+> notarisation and release testing. Source code and setup guides remain available.
 
 MK Crossfader began as a focused way to perform transitions from Maschine+
 hardware while running Maschine 3 on a Mac. A single physical fader or knob can
@@ -35,9 +39,9 @@ The project provides two workflows:
 | Controls levels, filters, sends, effects, and other MIDI-learnable parameters. | Applies smoothed audio gain while leaving the host's mixer faders untouched. |
 | Tested with Maschine 3 and Ableton Live; other macOS MIDI Learn software may also work. | Tested with Maschine 3 and Ableton Live; other compatible macOS VST3 hosts may also work. |
 
-The installer includes both components. They can be used separately, and any
-MIDI controller that sends an assignable MIDI CC can provide the physical
-control.
+The components can be used independently. A MIDI controller that sends an
+assignable MIDI CC can provide the physical control: directly to the app, or
+through the host's parameter mapping for the VST3.
 
 > [!IMPORTANT]
 > Maschine+ is supported as hardware in **Controller mode** while Maschine 3 and
@@ -62,6 +66,10 @@ each has a separate, deliberate role.
 The native macOS app receives one MIDI CC and sends a separate CC for every
 configured target through its virtual **MK Crossfader** MIDI port. Each target
 can follow side A, side B, or a custom range.
+
+These target types can run together. The same fader or knob can crossfade
+levels assigned to A and B while simultaneously moving a filter, send, effect,
+or other parameter through a custom Range target.
 
 In Ableton Live, one movement can open an Auto Filter through a restricted
 range, raise a reverb send, reduce delay feedback in the opposite direction,
@@ -95,13 +103,22 @@ instruments, and live input, but it cannot process MIDI or create sound on a
 silent channel. A Controller on the Master or Main track distributes control
 data without fading that track's audio.
 
+The VST3 controls audio gain only, with 15 ms smoothing. To move filters, sends
+or parameters in other plug-ins, use the MIDI Control App.
+
 ## Download And Install
 
-Download the current Developer ID signed and Apple-notarised installer from the
-**[Releases page](https://github.com/mks-devx/MK-Crossfader/releases/latest)**.
-No unsigned public binaries are distributed from this repository.
+There is currently **no installer available to download**. Check the
+**[Releases page](https://github.com/mks-devx/MK-Crossfader/releases)** for the
+replacement. The old release pages remain as version records, but their
+installer attachments have been removed.
 
-The package installs:
+GitHub's **Source code (zip)** and **Source code (tar.gz)** files contain source
+code, not installable applications or plug-ins. Developers can use the
+[build guide](docs/BUILDING.md); local development builds are not signed public
+releases. There is no Windows download at present.
+
+The macOS package layout is:
 
 - **MK MIDI Crossfader** in `/Applications`
 - **MK Crossfader VST3** in `/Library/Audio/Plug-Ins/VST3`
@@ -127,10 +144,11 @@ path that should join the crossfade.
 ### MIDI Multi-Mapping
 
 1. Open MK MIDI Crossfader and select the physical MIDI controller.
-2. Enable the virtual **MK Crossfader** port for MIDI mapping in the destination.
-3. Add a **Parameter** target and activate MIDI Learn on the destination control.
-4. Press **Send Learn**, then repeat for the remaining parameters.
-5. Assign each target to A, B, Range, or Off and configure its movement.
+2. Press **MIDI Learn** in the app and move the fader or knob to assign its input.
+3. Enable the virtual **MK Crossfader** port for MIDI mapping in the destination.
+4. Add a **Parameter** target and activate MIDI Learn on the destination control.
+5. Press **Send Learn**, then repeat for the remaining parameters.
+6. Assign each target to A, B, Range, or Off and configure its movement.
 
 In Ableton Live, enable **Remote** for the **MK Crossfader** input under
 **Settings > Link, Tempo & MIDI**. The app does not require Max for Live.
@@ -159,6 +177,8 @@ recoverable mix state. Before a show, test the exact project, controller, USB
 path, host version, and recovery procedure you intend to use.
 
 - Keep a manual unity or neutral recovery control available.
+- A MIDI target's **Return Value** is the value you choose for returning a
+  parameter when pausing; it does not remember the host's original value.
 - The MIDI app cannot send configured Return Values after a crash, forced quit,
   or power loss.
 - A VST3 Target that loses its Controller holds its last valid gain.
@@ -167,7 +187,7 @@ path, host version, and recovery procedure you intend to use.
 
 | Guide | Contents |
 | --- | --- |
-| [Installation](docs/INSTALLATION.md) | Signed package installation, locations, and removal |
+| [Installation](docs/INSTALLATION.md) | Availability, installation locations, and removal |
 | [Maschine Setup](docs/MASCHINE_SETUP.md) | Controller/Target routing, MIDI Learn, and recovery |
 | [Ableton Live Setup](docs/ABLETON_SETUP.md) | MIDI multi-control and VST3 audio crossfading |
 | [Architecture](docs/ARCHITECTURE.md) | Component boundaries, communication, and failure behaviour |
@@ -186,9 +206,10 @@ Run the complete local verification suite with:
 
 This builds and tests both components without installing them. The VST3 build
 uses JUCE 8.0.15, fetched automatically unless `JUCE_SOURCE_DIR` points to a
-local checkout. Every push and pull request also runs the macOS app tests, VST3
-tests, universal build checks, and public-history privacy audit in GitHub
-Actions.
+local checkout. The current GitHub Actions workflow builds and tests the macOS
+app and VST3 and checks public Git history. It does not upload downloadable
+builds. Passing CI is not a substitute for signing, notarisation or testing in
+a DAW on supported hardware.
 
 ## Support And Updates
 

@@ -1,15 +1,26 @@
 # Installation
 
-Official binary releases are distributed through the
-[Releases page](https://github.com/mks-devx/MK-Crossfader/releases). Download
-the `.pkg` and matching `.pkg.sha256` file for the current version.
+> [!IMPORTANT]
+> **Installer downloads are temporarily unavailable.** The 0.2.8 and 0.2.9
+> packages have been withdrawn. A replacement must complete signing,
+> notarisation and release testing before it is published. Check the
+> [Releases page](https://github.com/mks-devx/MK-Crossfader/releases) for updates.
+> GitHub's source ZIP and TAR archives are not installers.
+
+The package instructions below describe the installation process for a verified
+release when one is available. For local source builds, see
+[Building](BUILDING.md).
+
+When a replacement is published, download its `.pkg` and matching
+`.pkg.sha256` file from the
+[Releases page](https://github.com/mks-devx/MK-Crossfader/releases).
 
 Close Ableton Live, Maschine 3, and any other plug-in hosts before installing.
 To verify a download in Terminal, run the checksum command from the download
-folder:
+folder. Replace `VERSION` with the version number in the downloaded filename:
 
 ```zsh
-shasum -a 256 -c MK-Crossfader-0.2.9.pkg.sha256
+shasum -a 256 -c "MK-Crossfader-VERSION.pkg.sha256"
 ```
 
 Open the package and follow the installer. macOS asks for an administrator
