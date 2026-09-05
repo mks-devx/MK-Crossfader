@@ -22,9 +22,11 @@
 ---
 
 > [!IMPORTANT]
-> **Installer downloads are temporarily unavailable.** The 0.2.8 and 0.2.9
-> packages have been withdrawn. A replacement will be published after signing,
-> notarisation and release testing. Source code and setup guides remain available.
+> **0.3.0 is a testing preview, not a stable release.** Check
+> [Releases](https://github.com/mks-devx/MK-Crossfader/releases) for installer
+> availability. The macOS candidate is signed and notarised, but a
+> browser-download installation on a clean Mac and a full physical-controller
+> rehearsal are still outstanding. Test a disposable project before live use.
 
 MK Crossfader began as a focused way to perform transitions from Maschine+
 hardware while running Maschine 3 on a Mac. A single physical fader or knob can
@@ -118,10 +120,14 @@ or parameters in other plug-ins, use the MIDI Control App.
 
 ## Download And Install
 
-There is currently **no installer available to download**. Check the
-**[Releases page](https://github.com/mks-devx/MK-Crossfader/releases)** for the
-replacement. The old release pages remain as version records, but their
-installer attachments have been removed.
+Use the **[Releases page](https://github.com/mks-devx/MK-Crossfader/releases)**
+for the 0.3.0 testing preview and its current download status. When attached,
+download `MK-Crossfader-0.3.0.pkg` and its matching `.pkg.sha256` file. The
+combined installer requires macOS 14 or later and includes Apple Silicon and
+Intel builds. It is Developer ID signed, Apple-notarised and stapled.
+
+The 0.2.8 and 0.2.9 installer attachments remain withdrawn. Their release pages
+are historical version records, not recommended downloads.
 
 GitHub's **Source code (zip)** and **Source code (tar.gz)** files contain source
 code, not installable applications or plug-ins. Developers can use the

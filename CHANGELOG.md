@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 2026-09-05 - 0.3.0 Preview
+
+This revision is intended for testing. A clean-Mac browser-download installation
+check and a full physical-controller rehearsal remain outstanding. Windows
+support is source-only; no Windows installer or plug-in archive is included.
 
 ### MK MIDI Crossfader
 
@@ -35,6 +39,8 @@
 
 ### Packaging
 
+- Removed local ownership and filesystem identifiers from the installer
+  container, with archive-metadata and payload round-trip regression tests.
 - Added source privacy preflight before signing, including untracked source
   files, and regression checks for private-path and credential detection.
 - Included an offline setup index and the Maschine and Ableton setup manuals.
@@ -49,6 +55,8 @@
 
 ### Documentation
 
+- Clarified official releases, attribution and third-party branding while
+  retaining AGPL-3.0 redistribution rights.
 - Clarified that MK Crossfader was created primarily for live performance with
   Maschine 3 on macOS and Maschine+ hardware in Controller mode.
 - Separated the Ableton Live MIDI multi-control and VST3 audio crossfading
