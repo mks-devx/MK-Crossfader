@@ -4,8 +4,8 @@
   <p><strong>Audio Crossfading + MIDI Multi-Mapping</strong></p>
   <p>
     Created for Maschine 3 on macOS with Maschine+ in Controller mode.<br>
-    Also tested with Ableton Live. Other macOS DAWs may work through standard
-    MIDI Learn or VST3 hosting, but have not yet been tested.
+    Also verified with Ableton Live. A Windows 11 x64 VST3 community preview is
+    in development; the MIDI Control App remains macOS-only.
   </p>
   <p>
     <a href="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml"><img src="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
@@ -37,7 +37,7 @@ The project provides two workflows:
 | --- | --- |
 | Turns one incoming MIDI CC into multiple independently shaped CC outputs. | Links one Controller instance to multiple audio Target instances. |
 | Controls levels, filters, sends, effects, and other MIDI-learnable parameters. | Applies smoothed audio gain while leaving the host's mixer faders untouched. |
-| Tested with Maschine 3 and Ableton Live; other macOS MIDI Learn software may also work. | Tested with Maschine 3 and Ableton Live; other compatible macOS VST3 hosts may also work. |
+| Tested with Maschine 3 and Ableton Live; other macOS MIDI Learn software may also work. | Tested on macOS with Maschine 3 and Ableton Live; a Windows 11 x64 community preview is in development. |
 
 The components can be used independently. A MIDI controller that sends an
 assignable MIDI CC can provide the physical control: directly to the app, or
@@ -77,8 +77,11 @@ and trim Utility Gain. Live stores the MIDI mappings in the Live Set; the app
 does not inspect the Set or read parameter values back from Live.
 
 <p align="center">
-  <img src="docs/images/mk-midi-crossfader-app.png" width="820" alt="MK MIDI Crossfader showing controller mapping, targets, and crossfade controls">
+  <img src="docs/images/mk-midi-crossfader-app.png" width="820" alt="MK MIDI Crossfader 0.3.0 showing Group A and Group B level targets, a filter Range target, MIDI Learn, Send Learn, Shape, and Return Value">
 </p>
+
+*0.3.0 interface preview, paused for setup. The example combines A/B level
+targets with a filter Range target; one MIDI control can drive all three.*
 
 ## Audio Crossfader VST3
 
@@ -87,16 +90,23 @@ state and apply local smoothed gain to the audio passing through them. This
 keeps the host's mixer faders where you set them and lets effects placed before
 each Target remain part of the sound.
 
-<table>
-  <tr>
-    <td width="50%" align="center"><strong>Controller</strong></td>
-    <td width="50%" align="center"><strong>Target</strong></td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/mk-crossfader-vst3.png" alt="MK Crossfader VST3 Controller showing crossfade modes and target routes"></td>
-    <td><img src="docs/images/mk-crossfader-vst3-target.png" alt="MK Crossfader VST3 Target showing its session, target slot, connection state, and gain"></td>
-  </tr>
-</table>
+**Controller**
+
+<p align="center">
+  <img src="docs/images/mk-crossfader-vst3.png" width="820" alt="MK Crossfader VST3 0.3.0 Controller in Session 1 with Group A and Group B online, a linear curve, and the crossfader at 50 percent">
+</p>
+
+*0.3.0 interface preview. Two connected audio targets share Session 1; the
+Controller is halfway through a linear A-to-B crossfade.*
+
+**Target**
+
+<p align="center">
+  <img src="docs/images/mk-crossfader-vst3-target.png" width="820" alt="MK Crossfader VST3 0.3.0 Target connected to Session 1, Slot 1, displaying minus 6.0 dB gain">
+</p>
+
+*The matching Target in Slot 1 displays -6.0 dB: half amplitude at the midpoint
+of this linear crossfade. Other curves produce different midpoint levels.*
 
 Each Target is an audio effect. It works with samples, loops, software
 instruments, and live input, but it cannot process MIDI or create sound on a
@@ -117,6 +127,12 @@ GitHub's **Source code (zip)** and **Source code (tar.gz)** files contain source
 code, not installable applications or plug-ins. Developers can use the
 [build guide](docs/BUILDING.md); local development builds are not signed public
 releases. There is no Windows download at present.
+
+The experimental Windows build contains the VST3 only and is not part of the
+macOS installer. It must pass automated Windows compilation and plug-in tests
+before a community preview is attached to a release. See the
+[Windows preview guide](docs/WINDOWS_PREVIEW.md) for its exact status, manual
+installation, testing checklist, and reporting process.
 
 The macOS package layout is:
 
@@ -158,11 +174,12 @@ In Ableton Live, enable **Remote** for the **MK Crossfader** input under
 | Component | Requirement | Primary Use |
 | --- | --- | --- |
 | MK MIDI Crossfader | macOS 14 or later; CoreMIDI destination with MIDI Learn | Maschine 3, Ableton Live, and other MIDI-learnable macOS software |
-| MK Crossfader VST3 | macOS 13 or later; compatible VST3 host | Maschine 3, Ableton Live, and other macOS VST3 hosts |
+| MK Crossfader VST3 | macOS 13 or later; experimental Windows 11 x64 preview | Maschine 3, Ableton Live, and compatible VST3 hosts |
 | Hardware control | Assignable MIDI CC | Maschine+ in Controller mode or another MIDI controller |
 
-Maschine 3 and Ableton Live are the currently tested hosts. Other macOS DAWs
-may work if they expose standard MIDI Learn and/or support VST3, but their
+Maschine 3 and Ableton Live are currently tested on macOS. Windows DAW support
+remains unverified until community testing is complete. Other macOS DAWs may
+work if they expose standard MIDI Learn and/or support VST3, but their
 compatibility has not been verified yet.
 
 The Maschine-calibrated **Level** target requires Maschine 3. General
@@ -190,6 +207,7 @@ path, host version, and recovery procedure you intend to use.
 | [Installation](docs/INSTALLATION.md) | Availability, installation locations, and removal |
 | [Maschine Setup](docs/MASCHINE_SETUP.md) | Controller/Target routing, MIDI Learn, and recovery |
 | [Ableton Live Setup](docs/ABLETON_SETUP.md) | MIDI multi-control and VST3 audio crossfading |
+| [Windows Preview](docs/WINDOWS_PREVIEW.md) | Experimental Windows VST3 installation, testing, and reporting |
 | [Architecture](docs/ARCHITECTURE.md) | Component boundaries, communication, and failure behaviour |
 | [Privacy](docs/PRIVACY.md) | Local data, update checks, and network behaviour |
 | [Building](docs/BUILDING.md) | Source builds and development requirements |
@@ -206,10 +224,11 @@ Run the complete local verification suite with:
 
 This builds and tests both components without installing them. The VST3 build
 uses JUCE 8.0.15, fetched automatically unless `JUCE_SOURCE_DIR` points to a
-local checkout. The current GitHub Actions workflow builds and tests the macOS
-app and VST3 and checks public Git history. It does not upload downloadable
-builds. Passing CI is not a substitute for signing, notarisation or testing in
-a DAW on supported hardware.
+local checkout. This development revision configures macOS and Windows VST3
+tests, macOS app tests, host-loading checks, cross-process link checks and the
+public-history privacy audit. It does not package or upload downloads. The
+Windows workflow has not yet been published or run on GitHub. Passing CI is not
+a substitute for signing, notarisation or testing in a DAW on supported hardware.
 
 ## Support And Updates
 
@@ -232,7 +251,12 @@ own live set, then released as an open-source project for the community.
 - Security reports: [SECURITY.md](SECURITY.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
 - Licence: [GNU Affero General Public License v3.0](LICENSE)
+- Project identity: [Names, logo and official releases](TRADEMARKS.md)
 - Third-party notices: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+
+AGPL-3.0 permits redistribution, including selling compliant copies. Third-party
+forks and services must not be presented as official or endorsed releases.
+The identity policy does not change the software licence.
 
 Product names are used only to describe compatibility and workflow. MK
 Crossfader is independent and is not affiliated with or endorsed by the

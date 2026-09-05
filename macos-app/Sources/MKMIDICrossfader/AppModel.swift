@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
     @Published var selectedSourceID: MIDIUniqueID {
         didSet {
             if selectedSourceID != oldValue {
+                cancelPendingMappings()
                 hasReceivedInput = false
                 if isEnabled {
                     isEnabled = false
@@ -40,6 +41,7 @@ final class AppModel: ObservableObject {
                     suppressRestoreOnDisable = false
                     return
                 }
+                cancelPendingMappings()
                 lastSentValues.removeAll()
                 updateCurrentOutput()
             } else {
@@ -111,6 +113,13 @@ final class AppModel: ObservableObject {
     private var terminationCancellable: AnyCancellable?
     private var didRestoreForTermination = false
     private var suppressRestoreOnDisable = false
+    private struct PendingMapping {
+        let generation: UUID
+        let channel: UInt8
+        let controller: UInt8
+        let returnValue: UInt8
+    }
+    private var pendingMappings: [UUID: PendingMapping] = [:]
 
     var selectedSourceName: String {
         sources.first(where: { $0.id == selectedSourceID })?.name ?? "No Controller"
@@ -152,6 +161,11 @@ final class AppModel: ObservableObject {
 
     var canAddTarget: Bool {
         targets.count < 128
+    }
+
+    var canAddCrossfadePair: Bool {
+        targets.count <= 126
+            && Set(targets.map(\.controller)).count <= 126
     }
 
     var canSaveScene: Bool {
@@ -308,6 +322,53 @@ final class AppModel: ObservableObject {
         )
     }
 
+    func addCrossfadePair() {
+        guard !isEnabled,
+            canAddCrossfadePair,
+            let controllerA = nextAvailableController(startingAt: 110),
+            let controllerB = nextAvailableController(
+                startingAt: controllerA + 1,
+                reserving: [controllerA]
+            )
+        else {
+            return
+        }
+
+        targets.append(contentsOf: [
+            CrossfadeTarget(
+                name: uniqueTargetName("Group A"),
+                controller: controllerA,
+                side: .a
+            ),
+            CrossfadeTarget(
+                name: uniqueTargetName("Group B"),
+                controller: controllerB,
+                side: .b
+            ),
+        ])
+    }
+
+    func addParameterTarget() {
+        guard !isEnabled,
+            canAddTarget,
+            let controller = nextAvailableController(startingAt: 112)
+        else {
+            return
+        }
+
+        targets.append(
+            CrossfadeTarget(
+                name: uniqueTargetName("Parameter"),
+                controller: controller,
+                side: .b,
+                kind: .customMIDI,
+                transition: .range,
+                customLeftPercent: 0,
+                customRightPercent: 100
+            )
+        )
+    }
+
     func removeTarget(id: UUID) {
         guard !isEnabled,
             let index = targets.firstIndex(where: { $0.id == id })
@@ -322,7 +383,8 @@ final class AppModel: ObservableObject {
     }
 
     func updateTargetName(id: UUID, name: String) {
-        updateTarget(id: id) { $0.name = name }
+        guard let index = targets.firstIndex(where: { $0.id == id }) else { return }
+        targets[index].name = name
     }
 
     func updateTargetController(id: UUID, controller: Int) {
@@ -416,15 +478,22 @@ final class AppModel: ObservableObject {
     }
 
     func sendMappingMessage(to id: UUID) {
-        guard let target = targets.first(where: { $0.id == id }) else {
+        guard !didRestoreForTermination,
+            let target = targets.first(where: { $0.id == id }) else {
             return
         }
 
+        cancelPendingMapping(id)
         let maximum = target.kind.maximumMIDIValue
         let pulseStart = maximum > 0 ? maximum - 1 : maximum
         let restoreValue = target.restoreOutput
         let channel = UInt8(clamping: outputChannel)
         let controller = UInt8(clamping: target.controller)
+        let pending = PendingMapping(
+            generation: UUID(), channel: channel, controller: controller,
+            returnValue: restoreValue
+        )
+        pendingMappings[id] = pending
 
         engine.sendControlChange(
             value: pulseStart,
@@ -434,10 +503,11 @@ final class AppModel: ObservableObject {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
             guard let self,
-                self.targets.contains(where: { $0.id == id })
+                self.pendingMappings[id]?.generation == pending.generation
             else {
                 return
             }
+            self.pendingMappings[id] = nil
             self.engine.sendControlChange(
                 value: maximum,
                 channel: channel,
@@ -473,25 +543,13 @@ final class AppModel: ObservableObject {
         scenes.append(scene)
     }
 
-    func applyBuiltInPreset(_ preset: BuiltInCrossfadePreset) {
-        guard !isEnabled else {
-            return
-        }
-        lastSentValues.removeAll()
-        targets = preset.applying(to: targets)
-        mode = preset.mode
-        curve = preset.curve
-        minimumLevel = preset.minimumLevel
-        isReversed = false
-        updateCurrentOutput()
-    }
-
     func loadScene(id: UUID) {
         guard !isEnabled,
             let scene = scenes.first(where: { $0.id == id })
         else {
             return
         }
+        cancelPendingMappings()
         lastSentValues.removeAll()
         targets = scene.targets
         mode = scene.mode
@@ -529,6 +587,7 @@ final class AppModel: ObservableObject {
             hasReceivedInput = false
         }
         if !isConnected {
+            cancelPendingMappings()
             isLearning = false
             if isEnabled {
                 isEnabled = false
@@ -558,7 +617,7 @@ final class AppModel: ObservableObject {
         let maschineOutput = crossfadeOutput(for: .maschineLevel)
         lastOutput = maschineOutput
 
-        guard isEnabled else {
+        guard isEnabled, !didRestoreForTermination else {
             return
         }
 
@@ -575,7 +634,7 @@ final class AppModel: ObservableObject {
     }
 
     private func sendCurrentValue(to id: UUID) {
-        guard isEnabled,
+        guard isEnabled, !didRestoreForTermination,
             let target = targets.first(where: { $0.id == id })
         else {
             return
@@ -638,8 +697,9 @@ final class AppModel: ObservableObject {
     }
 
     private func restoreAllTargets(channel: Int? = nil) {
+        let returned = cancelPendingMappings()
         let restoreChannel = UInt8(clamping: channel ?? outputChannel)
-        for target in targets where target.participatesInOutput {
+        for target in targets where target.participatesInOutput && !returned.contains(target.id) {
             engine.sendControlChange(
                 value: target.restoreOutput,
                 channel: restoreChannel,
@@ -652,6 +712,7 @@ final class AppModel: ObservableObject {
         _ target: CrossfadeTarget,
         controller: Int? = nil
     ) {
+        if cancelPendingMapping(target.id) { return }
         guard target.participatesInOutput else {
             return
         }
@@ -668,6 +729,7 @@ final class AppModel: ObservableObject {
         }
         didRestoreForTermination = true
         guard isEnabled else {
+            cancelPendingMappings()
             return
         }
         restoreAllTargets()
@@ -680,17 +742,40 @@ final class AppModel: ObservableObject {
         guard let index = targets.firstIndex(where: { $0.id == id }) else {
             return
         }
+        cancelPendingMapping(id)
         change(&targets[index])
+    }
+
+    @discardableResult
+    private func cancelPendingMapping(_ id: UUID) -> Bool {
+        guard let pending = pendingMappings.removeValue(forKey: id) else {
+            return false
+        }
+        engine.sendControlChange(
+            value: pending.returnValue,
+            channel: pending.channel,
+            controller: pending.controller
+        )
+        lastSentValues[id] = nil
+        return true
+    }
+
+    @discardableResult
+    private func cancelPendingMappings() -> Set<UUID> {
+        let ids = Set(pendingMappings.keys)
+        for id in ids { cancelPendingMapping(id) }
+        return ids
     }
 
     private func nextAvailableController(
         startingAt start: Int,
-        excludingID: UUID? = nil
+        excludingID: UUID? = nil,
+        reserving reservedControllers: Set<Int> = []
     ) -> Int? {
         let normalizedStart = min(127, max(0, start))
         let order = Array(normalizedStart...127) + Array(0..<normalizedStart)
         return order.first(where: {
-            !controllerIsUsed(
+            !reservedControllers.contains($0) && !controllerIsUsed(
                 $0,
                 excludingID: excludingID
             )
@@ -728,6 +813,22 @@ final class AppModel: ObservableObject {
         }
         var suffix = 2
         while scenes.contains(where: {
+            $0.name.localizedCaseInsensitiveCompare("\(proposed) \(suffix)")
+                == .orderedSame
+        }) {
+            suffix += 1
+        }
+        return "\(proposed) \(suffix)"
+    }
+
+    private func uniqueTargetName(_ proposed: String) -> String {
+        guard targets.contains(where: {
+            $0.name.localizedCaseInsensitiveCompare(proposed) == .orderedSame
+        }) else {
+            return proposed
+        }
+        var suffix = 2
+        while targets.contains(where: {
             $0.name.localizedCaseInsensitiveCompare("\(proposed) \(suffix)")
                 == .orderedSame
         }) {

@@ -33,11 +33,11 @@ The JUCE VST3 contains both roles:
 - Each **Target** reads one slot from that session and applies a smoothed local
   gain to its own audio.
 
-Instances communicate through per-user POSIX shared memory on the same Mac.
-There are eight isolated sessions. Duplicate Controllers and duplicate Target
-slots are reported as conflicts. Parameter IDs, plug-in identifiers, and the
-shared-memory protocol are compatibility boundaries and should not be changed
-casually.
+Instances communicate through per-user POSIX shared memory on macOS and a
+local-session named shared-memory mapping on Windows. There are eight isolated
+sessions. Duplicate Controllers and duplicate Target slots are reported as
+conflicts. Parameter IDs, plug-in identifiers, and the shared-memory protocol
+are compatibility boundaries and should not be changed casually.
 
 The VST3 changes only its own gain. It does not move the host's mixer faders.
 Effects placed after a Target can continue producing tails after that Target is
@@ -51,10 +51,11 @@ audio signal passes through its plug-in instance.
 - VST3 sessions are not visible to the app.
 - Neither product rewrites Maschine routing.
 - The native app can target other MIDI Learn software through CoreMIDI. The
-  app and VST3 are both manually verified with Ableton Live, while Maschine 3
-  remains the primary documented hardware workflow for 0.2.9.
-- Both products run on the Mac. Maschine+ can control Maschine 3 on the Mac in
-  Controller mode, but neither product runs inside Maschine+ standalone.
+  app and VST3 are both manually verified with Ableton Live on macOS, while
+  Maschine 3 remains the primary documented hardware workflow.
+- Both products run on macOS. The experimental Windows build contains only the
+  VST3; the native MIDI Control App remains macOS-only. Neither product runs
+  inside Maschine+ standalone.
 - AU is not currently built or supported.
 
 The app retains settings migration for its older target type so existing local

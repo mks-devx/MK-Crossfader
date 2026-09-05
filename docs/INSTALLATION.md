@@ -1,17 +1,19 @@
 # Installation
 
-> [!IMPORTANT]
-> **Installer downloads are temporarily unavailable.** The 0.2.8 and 0.2.9
-> packages have been withdrawn. A replacement must complete signing,
-> notarisation and release testing before it is published. Check the
-> [Releases page](https://github.com/mks-devx/MK-Crossfader/releases) for updates.
-> GitHub's source ZIP and TAR archives are not installers.
+Use the [Releases page](https://github.com/mks-devx/MK-Crossfader/releases) to
+check current installer availability. Only the `.pkg` attachment is the macOS
+installer; GitHub's source ZIP and TAR archives are not installable products.
+For local source builds, see the online
+[build guide](https://github.com/mks-devx/MK-Crossfader/blob/main/docs/BUILDING.md).
 
-The package instructions below describe the installation process for a verified
-release when one is available. For local source builds, see
-[Building](BUILDING.md).
+The combined installer is for macOS. The experimental
+Windows 11 x64 VST3 has a separate
+[community preview guide](https://github.com/mks-devx/MK-Crossfader/blob/main/docs/WINDOWS_PREVIEW.md) and is not included in the macOS
+package.
 
-When a replacement is published, download its `.pkg` and matching
+## macOS
+
+For a published release, download its `.pkg` and matching
 `.pkg.sha256` file from the
 [Releases page](https://github.com/mks-devx/MK-Crossfader/releases).
 
@@ -38,12 +40,18 @@ The app and VST3 are independent products. Either can be used by itself; the
 VST3 does not require the app to be installed or running, and the app does not
 require the VST3.
 
+Open `START_HERE.md` in the installed documentation folder for the
+[Maschine setup](MASCHINE_SETUP.md) and [Ableton setup](ABLETON_SETUP.md) guides.
+Version 0.3.0 updates the internal VST3 link protocol. Close every host before
+upgrading and use the same version for all linked instances. Saved role,
+session, slot and mapping settings remain compatible.
+
 ## Build A Local-Test Installer
 
 Maintainers can create one package containing both products:
 
 ```zsh
-./scripts/build-installer.sh
+./scripts/build-installer.sh --local-test
 ```
 
 The unsigned `local-test` package is only for validation on the Mac that built

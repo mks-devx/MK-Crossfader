@@ -77,7 +77,6 @@ private:
     void releaseActiveClaim() noexcept;
     std::array<mkxf::SlotConfig, mkxf::targetCount> readSlots() const noexcept;
 
-    const std::uint64_t instanceToken;
     std::array<std::unique_ptr<mkxf::SharedBus>, 8> buses;
     std::atomic<float>* roleParameter{nullptr};
     std::atomic<float>* sessionParameter{nullptr};

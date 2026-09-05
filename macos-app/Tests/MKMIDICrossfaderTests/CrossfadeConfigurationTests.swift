@@ -69,63 +69,6 @@ func freshRangeDefaults() {
     #expect(target.customRightPercent == 100)
 }
 
-@Test("Performance A/B preset restores A/B mixing without changing parameters")
-func performanceABPreset() {
-    let targets = [
-        CrossfadeTarget(
-            name: "Group A",
-            controller: 110,
-            side: .a,
-            transition: .range,
-            customLeftPercent: 82,
-            customRightPercent: 17
-        ),
-        CrossfadeTarget(
-            name: "Filter",
-            controller: 112,
-            side: .b,
-            kind: .customMIDI,
-            transition: .range,
-            customLeftPercent: 4,
-            customRightPercent: 63
-        ),
-        CrossfadeTarget(name: "Off", controller: 113, side: .off),
-    ]
-
-    let result = BuiltInCrossfadePreset.performanceAB.applying(to: targets)
-
-    #expect(result[0].behavior == .sideA)
-    #expect(result[0].customLeftPercent == 82)
-    #expect(result[0].customRightPercent == 17)
-    #expect(result[1].behavior == .range)
-    #expect(result[1].customLeftPercent == 4)
-    #expect(result[1].customRightPercent == 63)
-    #expect(result[2].behavior == .off)
-    #expect(result.map(\.controller) == [110, 112, 113])
-    #expect(result.map(\.name) == ["Group A", "Filter", "Off"])
-    #expect(BuiltInCrossfadePreset.performanceAB.curve == .fullCentre)
-}
-
-@Test("Scene Morph preset morphs every active target using stored endpoints")
-func sceneMorphPreset() {
-    let targets = [
-        CrossfadeTarget(name: "A", controller: 110, side: .a),
-        CrossfadeTarget(name: "B", controller: 111, side: .b),
-        CrossfadeTarget(name: "Off", controller: 112, side: .off),
-    ]
-
-    let result = BuiltInCrossfadePreset.sceneMorph.applying(to: targets)
-
-    #expect(result[0].behavior == .range)
-    #expect(result[0].customLeftPercent == 100)
-    #expect(result[0].customRightPercent == 0)
-    #expect(result[1].behavior == .range)
-    #expect(result[1].customLeftPercent == 0)
-    #expect(result[1].customRightPercent == 100)
-    #expect(result[2].behavior == .off)
-    #expect(BuiltInCrossfadePreset.sceneMorph.curve == .smooth)
-}
-
 @Test("Target initializer clamps every percentage")
 func targetInitializerClampsPercentages() {
     let target = CrossfadeTarget(

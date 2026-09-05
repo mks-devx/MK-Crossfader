@@ -32,9 +32,7 @@ final class MIDIEngine: MIDIEngineProtocol {
     private var client: MIDIClientRef = 0
     private var inputPort: MIDIPortRef = 0
     private var connectedEndpoint: MIDIEndpointRef = 0
-    private var runningStatus: UInt8?
-    private var pendingData: [UInt8] = []
-    private let parserLock = NSLock()
+    private let parser = MIDIControlChangeParser()
 
     // A stable ID lets hosts retain their reference when the app relaunches.
     private static let virtualSourceUniqueID: MIDIUniqueID = 0x4D4B4358
@@ -149,10 +147,7 @@ final class MIDIEngine: MIDIEngineProtocol {
             connectedEndpoint = 0
         }
 
-        parserLock.lock()
-        runningStatus = nil
-        pendingData.removeAll(keepingCapacity: true)
-        parserLock.unlock()
+        parser.reset()
 
         guard let source, inputPort != 0 else {
             return false
@@ -214,70 +209,8 @@ final class MIDIEngine: MIDIEngineProtocol {
     }
 
     private func handle(packetList: UnsafePointer<MIDIPacketList>) {
-        parserLock.lock()
-        defer { parserLock.unlock() }
-
-        var packet = packetList.pointee.packet
-
-        for _ in 0..<packetList.pointee.numPackets {
-            withUnsafeBytes(of: packet.data) { rawBuffer in
-                let length = min(Int(packet.length), rawBuffer.count)
-                process(bytes: rawBuffer.prefix(length))
-            }
-            packet = MIDIPacketNext(&packet).pointee
-        }
-    }
-
-    private func process(bytes: Slice<UnsafeRawBufferPointer>) {
-        for rawByte in bytes {
-            let byte = UInt8(rawByte)
-
-            if byte >= 0xF8 {
-                continue
-            }
-
-            if byte & 0x80 != 0 {
-                if byte < 0xF0 {
-                    runningStatus = byte
-                } else {
-                    runningStatus = nil
-                }
-                pendingData.removeAll(keepingCapacity: true)
-                continue
-            }
-
-            guard let status = runningStatus else {
-                continue
-            }
-
-            pendingData.append(byte)
-            let requiredLength = dataLength(for: status)
-            guard requiredLength > 0, pendingData.count >= requiredLength else {
-                continue
-            }
-
-            if status & 0xF0 == 0xB0 {
-                onControlChange?(
-                    MIDIControlChange(
-                        channel: status & 0x0F,
-                        controller: pendingData[0],
-                        value: pendingData[1]
-                    )
-                )
-            }
-
-            pendingData.removeFirst(requiredLength)
-        }
-    }
-
-    private func dataLength(for status: UInt8) -> Int {
-        switch status & 0xF0 {
-        case 0xC0, 0xD0:
-            return 1
-        case 0x80, 0x90, 0xA0, 0xB0, 0xE0:
-            return 2
-        default:
-            return 0
+        parser.handle(packetList: packetList) { [weak self] message in
+            self?.onControlChange?(message)
         }
     }
 }

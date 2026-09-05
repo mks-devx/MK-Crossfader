@@ -1,0 +1,85 @@
+name: Windows VST3 preview report
+description: Report a successful test or a reproducible problem with the Windows x64 community preview.
+title: "[Windows VST3] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing the experimental Windows VST3. Reports from both successful and failed tests help establish real host compatibility.
+
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Successful test
+        - Reproducible problem
+        - Installation or scan problem
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: MK Crossfader version
+      placeholder: 0.3.0
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and build
+      placeholder: Windows 11 24H2, OS build 26100.x
+    validations:
+      required: true
+
+  - type: input
+    id: processor
+    attributes:
+      label: Processor
+      placeholder: Intel Core or AMD Ryzen model
+    validations:
+      required: true
+
+  - type: input
+    id: host
+    attributes:
+      label: Host and version
+      placeholder: Maschine 3.x or Ableton Live 12.x
+    validations:
+      required: true
+
+  - type: textarea
+    id: setup
+    attributes:
+      label: Controller and Target setup
+      description: Describe track locations, Session numbers, Target Slots, and route assignments.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and observed result
+      description: For a failure, include concise reproduction steps and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Optional screenshots or host messages. Remove personal data, licence information, private paths, and project content first.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I tested the latest available Windows preview.
+          required: true
+        - label: I used one Controller and unique Target Slots in the same Session.
+          required: true
+        - label: I removed personal or confidential information from this report.
+          required: true

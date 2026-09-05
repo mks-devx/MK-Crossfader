@@ -21,7 +21,7 @@ struct FrameRead {
 
 class SharedBus final {
 public:
-    SharedBus(int session, std::uint64_t instanceToken);
+    explicit SharedBus(int session);
     ~SharedBus();
 
     SharedBus(const SharedBus&) = delete;
@@ -45,7 +45,6 @@ public:
     [[nodiscard]] int activeTargetCount(std::uint64_t nowMs) const noexcept;
 
     static std::uint64_t monotonicMilliseconds() noexcept;
-    static std::uint64_t makeInstanceToken(const void* address) noexcept;
 
 private:
     struct Impl;

@@ -5,14 +5,30 @@ set -euo pipefail
 export COPYFILE_DISABLE=1
 
 ROOT="${0:A:h:h}"
-DIST_DIR="$ROOT/dist"
+DIST_DIR="${DIST_DIR:-$ROOT/dist}"
+LOCAL_TEST=0
+if [[ "${1:-}" == "--local-test" && "$#" == "1" ]]; then
+    LOCAL_TEST=1
+elif (( $# != 0 )); then
+    print -u2 "Usage: $0 [--local-test]"
+    exit 2
+fi
+if (( LOCAL_TEST )) && [[ -n "${APP_SIGNING_IDENTITY:-}${INSTALLER_SIGNING_IDENTITY:-}${NOTARY_PROFILE:-}" ]]; then
+    print -u2 "Local-test installers cannot use signing identities or notarisation credentials."
+    exit 1
+fi
+if (( ! LOCAL_TEST )) && [[ -z "${APP_SIGNING_IDENTITY:-}" || -z "${INSTALLER_SIGNING_IDENTITY:-}" || -z "${NOTARY_PROFILE:-}" ]]; then
+    print -u2 "Release builds require both Developer ID identities and NOTARY_PROFILE."
+    print -u2 "Use --local-test for an unsigned local validation package."
+    exit 1
+fi
 APP_VERSION="$(plutil -extract CFBundleShortVersionString raw \
     -o - "$ROOT/macos-app/packaging/Info.plist")"
 PLUGIN_VERSION="$(awk '/project\(MK_Crossfader VERSION/ { print $3 }' \
     "$ROOT/vst3/CMakeLists.txt")"
 VERSION="${RELEASE_VERSION:-$APP_VERSION}"
 
-if [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=all)" ]]; then
+if (( ! LOCAL_TEST )) && [[ -n "$(git -C "$ROOT" status --porcelain --untracked-files=all)" ]]; then
     print -u2 "The installer must be built from a clean Git checkout."
     exit 1
 fi
@@ -24,19 +40,29 @@ if [[ "$APP_VERSION" != "$PLUGIN_VERSION" || "$VERSION" != "$APP_VERSION" ]]; th
 fi
 
 for tool in awk codesign cpio ditto git gzip lipo lsbom mkbom pkgbuild \
-    pkgutil plutil productbuild shasum xattr; do
+    pkgutil plutil productbuild python3 rg shasum xar xattr; do
     if ! command -v "$tool" >/dev/null 2>&1; then
         print -u2 "Required tool not found: $tool"
         exit 1
     fi
 done
+if (( ! LOCAL_TEST )); then
+    for tool in productsign spctl xcrun; do
+        if ! command -v "$tool" >/dev/null 2>&1; then
+            print -u2 "Required release tool not found: $tool"
+            exit 1
+        fi
+    done
+fi
+
+"$ROOT/scripts/audit-release.sh" --source-only
 
 if [[ "${SKIP_BUILD:-0}" != "1" ]]; then
     CLEAN_BUILD=1 "$ROOT/scripts/verify-all.sh"
 fi
 
-APP="$ROOT/macos-app/build/MK MIDI Crossfader.app"
-PLUGIN="$ROOT/vst3/build-universal/MK_Crossfader_artefacts/Release/VST3/MK Crossfader.vst3"
+APP="${APP_BUILD_DIR:-$ROOT/macos-app/build}/MK MIDI Crossfader.app"
+PLUGIN="${VST3_BUILD_DIR:-$ROOT/vst3/build-universal}/MK_Crossfader_artefacts/Release/VST3/MK Crossfader.vst3"
 APP_BINARY="$APP/Contents/MacOS/MKMIDICrossfader"
 PLUGIN_BINARY="$PLUGIN/Contents/MacOS/MK Crossfader"
 
@@ -48,6 +74,7 @@ fi
 lipo "$APP_BINARY" -verify_arch arm64 x86_64
 lipo "$PLUGIN_BINARY" -verify_arch arm64 x86_64
 
+xattr -cr "$APP" "$PLUGIN"
 APP_SIGNING_IDENTITY="${APP_SIGNING_IDENTITY:-}"
 INSTALLER_SIGNING_IDENTITY="${INSTALLER_SIGNING_IDENTITY:-}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
@@ -66,6 +93,7 @@ if [[ -n "$NOTARY_PROFILE" && -z "$INSTALLER_SIGNING_IDENTITY" ]]; then
     exit 1
 fi
 
+xattr -cr "$APP" "$PLUGIN"
 codesign --verify --deep --strict --verbose=2 "$APP"
 codesign --verify --deep --strict --verbose=2 "$PLUGIN"
 
@@ -87,8 +115,9 @@ ditto "$PLUGIN" "$PLUGIN_ROOT/Library/Audio/Plug-Ins/VST3/MK Crossfader.vst3"
 cp "$ROOT/LICENSE" "$DOCS_ROOT/Library/Application Support/MK Crossfader/LICENSE.txt"
 cp "$ROOT/THIRD_PARTY_NOTICES.md" \
     "$DOCS_ROOT/Library/Application Support/MK Crossfader/THIRD_PARTY_NOTICES.md"
-cp "$ROOT/docs/INSTALLATION.md" \
-    "$DOCS_ROOT/Library/Application Support/MK Crossfader/INSTALLATION.md"
+for guide in START_HERE INSTALLATION MASCHINE_SETUP ABLETON_SETUP; do
+    cp "$ROOT/docs/$guide.md" "$DOCS_ROOT/Library/Application Support/MK Crossfader/$guide.md"
+done
 
 cp "$ROOT/installer/resources/"*.html "$RESOURCES/"
 cp "$ROOT/LICENSE" "$RESOURCES/LICENSE.txt"
@@ -158,6 +187,19 @@ productbuild --distribution "$WORK/Distribution.xml" \
     --package-path "$COMPONENTS" \
     "$UNSIGNED_PACKAGE"
 
+# Recreate the container without build-machine ownership and filesystem IDs.
+CONTAINER="$WORK/distribution-container"
+pkgutil --expand "$UNSIGNED_PACKAGE" "$CONTAINER"
+NORMALIZED_PACKAGE="$WORK/MK-Crossfader-$VERSION-distribution.pkg"
+(
+    cd "$CONTAINER"
+    # Payloads are already compressed; Installer expects no second compression layer.
+    xar --distribution --compression=none -cf "$NORMALIZED_PACKAGE" \
+        Distribution Resources MKCrossfaderApp.pkg MKCrossfaderVST3.pkg MKCrossfaderDocuments.pkg
+)
+python3 "$ROOT/scripts/audit-installer-container.py" "$NORMALIZED_PACKAGE"
+UNSIGNED_PACKAGE="$NORMALIZED_PACKAGE"
+
 if [[ -n "$INSTALLER_SIGNING_IDENTITY" ]]; then
     OUTPUT_NAME="MK-Crossfader-$VERSION.pkg"
     productsign --sign "$INSTALLER_SIGNING_IDENTITY" \
@@ -170,6 +212,9 @@ else
 fi
 
 xattr -c "$DIST_DIR/$OUTPUT_NAME" 2>/dev/null || true
+
+# Validate the assembled payload before sending it to Apple.
+"$ROOT/scripts/audit-release.sh" "$DIST_DIR/$OUTPUT_NAME"
 
 if [[ -n "$NOTARY_PROFILE" ]]; then
     for tool in spctl xcrun; do

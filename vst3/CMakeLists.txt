@@ -9,7 +9,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
         "Oldest supported macOS version")
 endif()
 
-project(MK_Crossfader VERSION 0.2.9 LANGUAGES C CXX)
+project(MK_Crossfader VERSION 0.3.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,6 +24,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(JUCE)
 
 enable_testing()
+
+find_package(Threads REQUIRED)
+add_executable(MK_Crossfader_SharedBusTests tests/SharedBusTests.cpp src/SharedBus.cpp)
+target_include_directories(MK_Crossfader_SharedBusTests PRIVATE src)
+target_compile_definitions(MK_Crossfader_SharedBusTests PRIVATE MK_CROSSFADER_TEST_BUS=1)
+target_link_libraries(MK_Crossfader_SharedBusTests PRIVATE Threads::Threads)
+add_test(NAME MK_Crossfader_SharedBusTests COMMAND MK_Crossfader_SharedBusTests)
 
 set(MK_CROSSFADER_CORE
     src/CrossfadeEngine.cpp
@@ -110,10 +117,15 @@ target_link_libraries(MK_Crossfader_HostValidation PRIVATE
     juce::juce_gui_basics
 )
 add_dependencies(MK_Crossfader_HostValidation MK_Crossfader_VST3)
+get_target_property(
+    MK_CROSSFADER_VST3_ARTEFACT
+    MK_Crossfader_VST3
+    JUCE_PLUGIN_ARTEFACT_FILE
+)
 add_test(
     NAME MK_Crossfader_HostValidation
     COMMAND MK_Crossfader_HostValidation
-        "$<TARGET_BUNDLE_DIR:MK_Crossfader_VST3>"
+        "${MK_CROSSFADER_VST3_ARTEFACT}"
 )
 
 if(APPLE)

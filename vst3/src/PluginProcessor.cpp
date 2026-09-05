@@ -17,8 +17,7 @@ MKCrossfaderProcessor::MKCrossfaderProcessor()
               .withInput("Input", juce::AudioChannelSet::stereo(), true)
               .withOutput("Output", juce::AudioChannelSet::stereo(), true)
       ),
-      state(*this, nullptr, "MKCrossfaderState", createParameters()),
-      instanceToken(mkxf::SharedBus::makeInstanceToken(this)) {
+      state(*this, nullptr, "MKCrossfaderState", createParameters()) {
     roleParameter = state.getRawParameterValue("role");
     sessionParameter = state.getRawParameterValue("session");
     targetSlotParameter = state.getRawParameterValue("targetSlot");
@@ -31,7 +30,7 @@ MKCrossfaderProcessor::MKCrossfaderProcessor()
     flipParameter = state.getRawParameterValue("flip");
     for (auto session = 0; session < static_cast<int>(buses.size()); ++session) {
         buses[static_cast<std::size_t>(session)] =
-            std::make_unique<mkxf::SharedBus>(session + 1, instanceToken);
+            std::make_unique<mkxf::SharedBus>(session + 1);
     }
     for (auto slot = 0; slot < static_cast<int>(mkxf::targetCount); ++slot) {
         slotParameters[static_cast<std::size_t>(slot)] = {

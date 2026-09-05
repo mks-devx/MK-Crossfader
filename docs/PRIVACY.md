@@ -28,8 +28,9 @@ items.
 
 Plug-in parameters and route names are stored by the host as part of the
 project or preset state. Controller and Target instances exchange current
-values through per-user shared memory on the same Mac. That shared memory is
-not a network service and is not used after the processes stop.
+values through local shared memory on the same computer. macOS uses per-user
+POSIX shared memory; Windows uses a named mapping limited to the current login
+session. Neither transport is a network service.
 
 The plug-in processes audio in memory and does not write recordings or sample
 content to disk. The VST3 never checks for updates and does not access the

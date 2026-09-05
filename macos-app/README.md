@@ -33,7 +33,7 @@ parameters, with independent ranges and directions for every mapping. See the
 - Per-target Range morphing with independent endpoints and shape
 - Up to 128 MIDI-learned targets
 - Up to 16 complete user presets
-- Performance A/B and Scene Morph starting points
+- Additive A/B Crossfade Pair, Parameter Range, and Level Target quick actions
 - Return & Pause, startup pause, target uniqueness checks, and controller
   hot-plug refresh
 - Dock and app-switcher presence that can be disabled under **Advanced** while
@@ -43,7 +43,8 @@ parameters, with independent ranges and directions for every mapping. See the
 - Manual GitHub release checking with no background checks, automatic download,
   or automatic installation
 
-The built-in presets are workflow starting points and do not emulate hardware.
+Quick actions add targets without changing existing mappings. Saved presets are
+separate, complete snapshots of targets and crossfade settings.
 
 ## Target Types
 

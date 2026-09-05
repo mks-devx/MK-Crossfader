@@ -4,8 +4,48 @@
 
 ### MK MIDI Crossfader
 
+- Fixed variable-length and batched MIDI input parsing, including partial
+  controller messages and running status across callbacks.
+- Cancelled pending Send Learn pulses safely when mappings, presets, routing,
+  or activation change, and during normal termination.
+- Made malformed release versions produce a recoverable update-check error.
+
 - Increased the contrast of each Send Learn action and strengthened its icon so
   it remains easy to identify in dense target lists.
+- Made the main MIDI Learn action visually distinct from secondary controls and
+  clarified why it may be unavailable.
+- Replaced mapping-changing built-in presets with additive A/B Crossfade Pair,
+  Parameter Range, and Level Target actions.
+- Kept saved presets separate as complete user-created configuration snapshots.
+
+### MK Crossfader VST3
+
+- Made ownership and heartbeat updates atomic and tied gain frames to their
+  current owner, preventing stale-frame reuse during Controller replacement.
+- Versioned the internal link protocol; linked instances must use the same
+  version after upgrading. Saved plug-in state remains compatible.
+- Added ownership, handover, clock-wrap and concurrent frame integrity tests.
+- Made the Windows build script stop on failed native commands or a missing
+  plug-in bundle.
+
+- Added a Windows x64 shared-memory transport for linked Controller and Target
+  instances.
+- Added Windows compilation, process-link, host-loading, and plug-in test gates
+  to continuous integration.
+
+### Packaging
+
+- Added source privacy preflight before signing, including untracked source
+  files, and regression checks for private-path and credential detection.
+- Included an offline setup index and the Maschine and Ableton setup manuals.
+- Added an explicit unsigned local-test installer mode for uncommitted changes.
+- Required signing and notarisation configuration before a release build can
+  begin; incomplete release configuration no longer produces a package.
+
+- Removed local Swift build paths from the release app executable before
+  signing.
+- Strengthened release auditing to inspect raw executable data for private
+  paths, credentials, and inappropriate provenance metadata.
 
 ### Documentation
 

@@ -12,12 +12,13 @@ individual bug fixes.
 
 1. Read the [installation guide](docs/INSTALLATION.md) and the setup guide for
    [Maschine 3](docs/MASCHINE_SETUP.md) or
-   [Ableton Live](docs/ABLETON_SETUP.md).
+   [Ableton Live](docs/ABLETON_SETUP.md). Windows preview testers must also
+   read the [Windows preview guide](docs/WINDOWS_PREVIEW.md).
 2. Search the existing GitHub issues for the same problem.
 3. If the problem has not been reported, open a public GitHub issue and include
-   the affected MK Crossfader version, macOS version, destination software and
-   version, product used (app or VST3), MIDI controller, and clear reproduction
-   steps.
+   the affected MK Crossfader version, operating-system version, destination
+   software and version, product used (app or VST3), MIDI controller, and clear
+   reproduction steps.
 4. Remove personal information, project content, credentials, and private file
    paths before attaching screenshots or logs.
 

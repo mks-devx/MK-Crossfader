@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT_DIR="${0:A:h:h}"
 APP_NAME="MK MIDI Crossfader"
-BUILD_DIR="$ROOT_DIR/build"
+BUILD_DIR="${APP_BUILD_DIR:-$ROOT_DIR/build}"
 APP_DIR="$BUILD_DIR/$APP_NAME.app"
 ARCHIVE="$BUILD_DIR/$APP_NAME.app.zip"
 MODULE_CACHE="$ROOT_DIR/.build/module-cache"
@@ -39,6 +39,13 @@ lipo -create \
     "$ARM_BIN_DIR/MKMIDICrossfader" \
     "$INTEL_BIN_DIR/MKMIDICrossfader" \
     -output "$APP_DIR/Contents/MacOS/MKMIDICrossfader"
+/usr/bin/strip -S "$APP_DIR/Contents/MacOS/MKMIDICrossfader"
+if LC_ALL=C grep -aqE \
+    '[/]Users/[A-Za-z0-9._-]+/|[/]Volumes/' \
+    "$APP_DIR/Contents/MacOS/MKMIDICrossfader"; then
+    print -u2 "The release executable contains a local build path."
+    exit 1
+fi
 cp "$ROOT_DIR/packaging/Info.plist" "$APP_DIR/Contents/Info.plist"
 cp "$ROOT_DIR/packaging/Resources/MKCrossfader.icns" "$APP_DIR/Contents/Resources/MKCrossfader.icns"
 cp "$ROOT_DIR/packaging/Resources/MKCrossfaderLogo.png" "$APP_DIR/Contents/Resources/MKCrossfaderLogo.png"

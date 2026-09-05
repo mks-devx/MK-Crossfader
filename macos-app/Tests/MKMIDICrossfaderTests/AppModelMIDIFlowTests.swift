@@ -389,7 +389,7 @@ func controllerDisconnectReturnsActiveTargets() async throws {
     ])
 }
 
-@Test("Loading presets while paused sends no MIDI")
+@Test("Loading a saved preset while paused sends no MIDI")
 @MainActor
 func pausedPresetLoadingIsSilent() throws {
     let engine = RecordingMIDIEngine()
@@ -414,10 +414,36 @@ func pausedPresetLoadingIsSilent() throws {
     model.loadScene(id: preset.id)
     #expect(engine.sentMessages.isEmpty)
     #expect(model.targets.map(\.name) == ["Saved A"])
+}
 
-    model.applyBuiltInPreset(.sceneMorph)
+@Test("Quick-add workflows preserve targets and allocate unused CCs")
+@MainActor
+func quickAddWorkflowsAreAdditive() throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let existing = CrossfadeTarget(
+        name: "Filter",
+        controller: 112,
+        side: .b,
+        kind: .customMIDI,
+        transition: .range,
+        customLeftPercent: 15,
+        customRightPercent: 72
+    )
+    defaults.set(try JSONEncoder().encode([existing]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+
+    model.addCrossfadePair()
+    model.addParameterTarget()
+
+    #expect(model.targets.count == 4)
+    #expect(model.targets[0] == existing)
+    #expect(model.targets.map(\.controller) == [112, 110, 111, 113])
+    #expect(model.targets.map(\.behavior) == [.range, .sideA, .sideB, .range])
+    #expect(model.targets[3].kind == .customMIDI)
+    #expect(model.targets[3].customLeftPercent == 0)
+    #expect(model.targets[3].customRightPercent == 100)
     #expect(engine.sentMessages.isEmpty)
-    #expect(model.targets[0].behavior == .range)
 }
 
 @Test("Send Learn emits movement and restores the active value")
@@ -492,4 +518,127 @@ func sendLearnReturnSafety() async throws {
         channel: 15,
         controller: 112
     ))
+}
+
+@Test("Mapping lifecycle changes cancel pending Learn messages", arguments: [
+    "route", "kind", "behavior", "return", "channel", "source", "disconnect",
+    "remove", "preset", "pause", "terminate",
+])
+@MainActor
+func pendingLearnCancellation(action: String) async throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Filter", controller: 112, side: .b, kind: .customMIDI,
+        transition: .range, restorePercent: 25
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+    model.saveScene(name: "Saved")
+    model.sendMappingMessage(to: target.id)
+    switch action {
+    case "route": model.updateTargetController(id: target.id, controller: 113)
+    case "kind": model.updateTargetKind(id: target.id, kind: .maschineLevel)
+    case "behavior": model.updateTargetBehavior(id: target.id, behavior: .off)
+    case "return": model.updateTargetRestore(id: target.id, percent: 0)
+    case "channel": model.outputChannel = 4
+    case "source": model.selectedSourceID = 999
+    case "disconnect":
+        engine.exposesSource = false
+        model.refreshSources()
+    case "remove": model.removeTarget(id: target.id)
+    case "preset": model.loadScene(id: model.scenes[0].id)
+    case "pause": model.restoreAndPause()
+    case "terminate": model.prepareForTermination()
+    default: Issue.record("Unknown lifecycle action")
+    }
+    #expect(engine.sentMessages.last == .init(value: 32, channel: 15, controller: 112))
+    let checkpoint = engine.sentMessages
+    try await Task.sleep(for: .milliseconds(160))
+    #expect(engine.sentMessages == checkpoint)
+}
+
+@Test("Preset replacement returns a removed target during Send Learn")
+@MainActor
+func presetReplacementDuringLearn() async throws {
+    let engine = RecordingMIDIEngine()
+    let model = AppModel(engine: engine, defaults: makeDefaults())
+    model.saveScene(name: "Before mapping")
+    model.addParameterTarget()
+    let target = model.targets.last!
+    model.updateTargetRestore(id: target.id, percent: 0)
+    model.sendMappingMessage(to: target.id)
+    model.loadScene(id: model.scenes[0].id)
+    let checkpoint = engine.sentMessages
+    #expect(checkpoint.last == .init(value: 0, channel: 15, controller: UInt8(target.controller)))
+    try await Task.sleep(for: .milliseconds(160))
+    #expect(engine.sentMessages == checkpoint)
+}
+
+@Test("Repeated Send Learn cancels the earlier pulse")
+@MainActor
+func repeatedSendLearn() async throws {
+    let engine = RecordingMIDIEngine()
+    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let id = model.targets[0].id
+    model.sendMappingMessage(to: id)
+    model.sendMappingMessage(to: id)
+    try await Task.sleep(for: .milliseconds(160))
+    #expect(engine.sentMessages.map(\.value) == [94, 95, 94, 95])
+}
+
+@Test("Normal termination cancels Learn on Off targets and rejects later pulses")
+@MainActor
+func offTargetLearnTermination() async throws {
+    let engine = RecordingMIDIEngine()
+    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let id = model.targets[0].id
+    model.updateTargetBehavior(id: id, behavior: .off)
+    model.sendMappingMessage(to: id)
+    model.prepareForTermination()
+    model.prepareForTermination()
+    model.sendMappingMessage(to: id)
+    try await Task.sleep(for: .milliseconds(160))
+    #expect(engine.sentMessages.map(\.value) == [94, 95])
+}
+
+@Test("Changing Shape recomputes the output and Pause sends the chosen Return Value")
+@MainActor
+func shapeAndReturnAtMidpoint() async throws {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let target = CrossfadeTarget(
+        name: "Filter", controller: 112, side: .b, kind: .customMIDI,
+        transition: .range, customLeftPercent: 24, customRightPercent: 64,
+        parameterCurve: .linear, restorePercent: 18
+    )
+    defaults.set(try JSONEncoder().encode([target]), forKey: "targets")
+    let model = AppModel(engine: engine, defaults: defaults)
+    engine.emit(channel: 13, controller: 48, value: 64)
+    await drainMainQueue()
+    model.isEnabled = true
+    #expect(engine.sentMessages.last?.value == 56)
+    model.updateTargetParameterCurve(id: target.id, curve: .exponential)
+    #expect(engine.sentMessages.last?.value == 43)
+    model.updateTargetParameterCurve(id: target.id, curve: .logarithmic)
+    #expect(engine.sentMessages.last?.value == 66)
+    model.restoreAndPause()
+    #expect(engine.sentMessages.last?.value == 23)
+}
+
+@Test("Renaming an active target does not interrupt its Learn pulse or change the sound")
+@MainActor
+func renameDuringLearn() async throws {
+    let engine = RecordingMIDIEngine()
+    let model = AppModel(engine: engine, defaults: makeDefaults())
+    engine.emit(channel: 13, controller: 48, value: 0)
+    await drainMainQueue()
+    model.isEnabled = true
+    engine.sentMessages.removeAll()
+    let id = model.targets[1].id
+    model.sendMappingMessage(to: id)
+    model.updateTargetName(id: id, name: "Renamed")
+    #expect(engine.sentMessages.map(\.value) == [94])
+    try await Task.sleep(for: .milliseconds(160))
+    #expect(engine.sentMessages.map(\.value) == [94, 95, 0])
 }

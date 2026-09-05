@@ -66,11 +66,6 @@ struct MenuBarContent: View {
     }
 }
 
-private enum PresetSelection: Hashable {
-    case builtIn(BuiltInCrossfadePreset)
-    case saved(UUID)
-}
-
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var updateChecker: AppUpdateChecker
@@ -78,7 +73,7 @@ struct SettingsView: View {
     private var showDockIcon = true
     @StateObject private var launchAtLogin = LaunchAtLoginController()
     @State private var showsAdvanced = false
-    @State private var selectedPreset: PresetSelection?
+    @State private var selectedPresetID: UUID?
     @State private var showsSavePresetAlert = false
     @State private var presetName = ""
     @State private var presetPendingDeletion: UUID?
@@ -225,7 +220,7 @@ struct SettingsView: View {
             }
             Button("Save") {
                 model.saveScene(name: presetName)
-                selectedPreset = nil
+                selectedPresetID = nil
                 presetName = ""
             }
         }
@@ -248,7 +243,7 @@ struct SettingsView: View {
             {
                 Button("Delete \(scene.name)", role: .destructive) {
                     model.deleteScene(id: presetPendingDeletion)
-                    selectedPreset = nil
+                    selectedPresetID = nil
                     self.presetPendingDeletion = nil
                 }
             }
@@ -376,39 +371,33 @@ struct SettingsView: View {
 
     private var presetSettings: some View {
         HStack(spacing: 10) {
-            Text("Preset")
+            Text("Saved preset")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Picker("Preset", selection: $selectedPreset) {
-                Text("Select preset").tag(PresetSelection?.none)
-                Section("Built-in") {
-                    ForEach(BuiltInCrossfadePreset.allCases) { preset in
-                        Text(preset.displayName)
-                            .tag(Optional(PresetSelection.builtIn(preset)))
-                    }
-                }
-                if !model.scenes.isEmpty {
-                    Section("Saved") {
-                        ForEach(model.scenes) { preset in
-                            Text(preset.name)
-                                .tag(Optional(PresetSelection.saved(preset.id)))
-                        }
-                    }
+            Picker("Saved preset", selection: $selectedPresetID) {
+                Text("Select preset").tag(UUID?.none)
+                ForEach(model.scenes) { preset in
+                    Text(preset.name)
+                        .tag(Optional(preset.id))
                 }
             }
             .labelsHidden()
             .frame(width: 280, alignment: .leading)
-            .help(selectedPresetHelp)
+            .help("Load a saved snapshot of targets and crossfade settings")
 
             Spacer(minLength: 0)
 
             Button {
-                loadSelectedPreset()
+                guard let selectedPresetID else {
+                    return
+                }
+                model.loadScene(id: selectedPresetID)
+                self.selectedPresetID = nil
             } label: {
                 Label("Load", systemImage: "tray.and.arrow.down")
             }
-            .disabled(model.isEnabled || selectedPreset == nil)
+            .disabled(model.isEnabled || selectedPresetID == nil)
             .help(model.isEnabled ? "Pause before loading a preset" : "Load preset")
 
             Button {
@@ -421,16 +410,16 @@ struct SettingsView: View {
             .help("Save current targets and crossfade settings")
 
             Button(role: .destructive) {
-                guard let selectedSavedPresetID else {
+                guard let selectedPresetID else {
                     return
                 }
-                presetPendingDeletion = selectedSavedPresetID
+                presetPendingDeletion = selectedPresetID
             } label: {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
-            .disabled(model.isEnabled || selectedSavedPresetID == nil)
+            .disabled(model.isEnabled || selectedPresetID == nil)
             .help(
                 model.isEnabled
                     ? "Pause before deleting a preset"
@@ -438,38 +427,6 @@ struct SettingsView: View {
             )
             .accessibilityLabel("Delete saved preset")
         }
-    }
-
-    private var selectedSavedPresetID: UUID? {
-        guard case .saved(let id) = selectedPreset else {
-            return nil
-        }
-        return id
-    }
-
-    private var selectedPresetHelp: String {
-        guard let selectedPreset else {
-            return "Choose a built-in or saved preset"
-        }
-        switch selectedPreset {
-        case .builtIn(let preset):
-            return preset.helpText
-        case .saved:
-            return "A saved snapshot of targets and crossfade settings"
-        }
-    }
-
-    private func loadSelectedPreset() {
-        guard let selectedPreset else {
-            return
-        }
-        switch selectedPreset {
-        case .builtIn(let preset):
-            model.applyBuiltInPreset(preset)
-        case .saved(let id):
-            model.loadScene(id: id)
-        }
-        self.selectedPreset = nil
     }
 
     private var controllerSettings: some View {
@@ -528,7 +485,15 @@ struct SettingsView: View {
                         : "dot.radiowaves.left.and.right"
                 )
             }
+            .buttonStyle(LearnActionButtonStyle(primary: true))
             .disabled(model.isEnabled || !model.isConnected)
+            .help(
+                model.isEnabled
+                    ? "Pause before learning the crossfader input"
+                    : model.isConnected
+                        ? "Move the physical fader or knob to learn its MIDI CC"
+                        : "Connect and select a MIDI controller first"
+            )
         }
     }
 
@@ -551,7 +516,7 @@ struct SettingsView: View {
                 ContentUnavailableView(
                     "No Targets",
                     systemImage: "slider.horizontal.2.square",
-                    description: Text("Add a target to begin.")
+                    description: Text("Add an A/B pair or a parameter to begin.")
                 )
                 .frame(height: 130)
             } else {
@@ -562,8 +527,29 @@ struct SettingsView: View {
                 }
             }
 
-            Button {
-                model.addTarget()
+            Menu {
+                Button {
+                    model.addCrossfadePair()
+                } label: {
+                    Label("A/B Crossfade Pair", systemImage: "arrow.left.arrow.right")
+                }
+                .disabled(!model.canAddCrossfadePair)
+
+                Button {
+                    model.addParameterTarget()
+                } label: {
+                    Label("Parameter Range", systemImage: "slider.horizontal.3")
+                }
+                .disabled(!model.canAddTarget)
+
+                Divider()
+
+                Button {
+                    model.addTarget()
+                } label: {
+                    Label("Level Target", systemImage: "speaker.wave.2")
+                }
+                .disabled(!model.canAddTarget)
             } label: {
                 Label("Add Target", systemImage: "plus")
             }
@@ -804,10 +790,7 @@ private struct TargetRow: View {
                 } label: {
                     Label("Send Learn", systemImage: "paperplane.fill")
                 }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 6))
-                .tint(Color(rgbHex: "565B62"))
-                .foregroundStyle(Color(rgbHex: "F3F3F1"))
+                .buttonStyle(LearnActionButtonStyle())
                 .accessibilityLabel("Send MIDI Learn for \(target.displayName)")
                 .help(
                     model.isEnabled
@@ -1114,7 +1097,7 @@ private struct SceneEndpointControl: View {
     }
 }
 
-private extension Color {
+extension Color {
     init(rgbHex: String) {
         let cleaned = rgbHex.trimmingCharacters(
             in: CharacterSet.alphanumerics.inverted

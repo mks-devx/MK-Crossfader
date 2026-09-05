@@ -1,9 +1,9 @@
 # MK Crossfader VST3
 
-MK Crossfader is an independent macOS VST3 created for linked audio crossfading
-in a Maschine 3 live performance setup with Maschine+ hardware in Controller
-mode. It connects one Controller to multiple Target instances and runs without
-MK MIDI Crossfader.
+MK Crossfader is an independent VST3 created for linked audio crossfading in a
+Maschine 3 live performance setup with Maschine+ hardware in Controller mode.
+It connects one Controller to multiple Target instances and runs without MK
+MIDI Crossfader.
 
 ## Roles
 
@@ -16,11 +16,12 @@ Scene gives every route explicit left and right endpoint gains.
 
 Targets use 15 ms gain smoothing and do not move host mixer faders.
 
-The VST3 has also been manually verified in Ableton Live and can work in other
-compatible macOS VST3 hosts. Put one Controller on the Master track, then put a
-Target after the audio source or effects on every track that should join the
-crossfade. All linked instances must use the same session and each Target must
-use a unique slot.
+The VST3 has been manually verified on macOS in Maschine 3 and Ableton Live. A
+Windows 11 x64 community preview is in development but has not yet been tested
+on physical Windows hardware or in a Windows DAW. Put one Controller on the
+Master track, then put a Target after the audio source or effects on every
+track that should join the crossfade. All linked instances must use the same
+session and each Target must use a unique slot.
 
 ## Audio Requirement
 
@@ -61,7 +62,7 @@ The Target changes plug-in gain inside the audio path; it does not move Live's
 track fader. Save the Controller and Targets in the same Live Set so their
 roles, session, slots, and route assignments recall together.
 
-## Build
+## Build On macOS
 
 ```zsh
 ./vst3/scripts/build.sh
@@ -79,3 +80,14 @@ Apple-notarised package from the repository's Releases page.
 See [Maschine setup](../docs/MASCHINE_SETUP.md),
 [Ableton Live setup](../docs/ABLETON_SETUP.md), and
 [building](../docs/BUILDING.md).
+
+## Build On Windows 11 x64
+
+```powershell
+./vst3/scripts/build-windows.ps1
+```
+
+This builds the plug-in with Visual Studio 2022 and runs the same DSP, state,
+editor, cross-process, and host-loading tests. Windows support is experimental;
+read the [Windows community preview guide](../docs/WINDOWS_PREVIEW.md) before
+installing or reporting compatibility.

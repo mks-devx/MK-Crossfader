@@ -1,23 +1,37 @@
 #include "SharedBus.h"
 
 #include <array>
+#include <algorithm>
 #include <atomic>
-#include <cerrno>
 #include <cstring>
-#include <fcntl.h>
+#include <limits>
 #include <new>
 #include <string>
+
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#else
+#include <cerrno>
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#endif
 
 namespace mkxf {
 namespace {
 
 constexpr std::uint32_t busMagic = 0x4d4b5846;
-constexpr std::uint32_t busVersion = 1;
+constexpr std::uint32_t busVersion = 2;
 constexpr std::uint64_t staleAfterMs = 2000;
+#if defined(MK_CROSSFADER_TEST_BUS)
+constexpr char busName[] = "mk_crossfader_test_v2_";
+#else
+constexpr char busName[] = "mk_crossfader_v2_";
+#endif
 
 static_assert(std::atomic<std::uint32_t>::is_always_lock_free);
 static_assert(std::atomic<std::uint64_t>::is_always_lock_free);
@@ -35,29 +49,120 @@ float bitsFloat(std::uint32_t bits) noexcept {
     return value;
 }
 
-bool isFresh(std::uint64_t heartbeat, std::uint64_t now) noexcept {
-    return heartbeat != 0 && now >= heartbeat && now - heartbeat <= staleAfterMs;
+std::uint32_t ownerId(std::uint64_t value) noexcept {
+    return static_cast<std::uint32_t>(value >> 32u);
+}
+
+std::uint64_t tagged(std::uint32_t owner, std::uint32_t value) noexcept {
+    return (static_cast<std::uint64_t>(owner) << 32u) | value;
+}
+
+bool isFresh(std::uint64_t lease, std::uint64_t now) noexcept {
+    const auto age = static_cast<std::uint32_t>(now) - static_cast<std::uint32_t>(lease);
+    // A newer heartbeat can be observed after a callback captures its time.
+    // Unsigned subtraction also handles the 32-bit millisecond clock wrapping.
+    return ownerId(lease) != 0
+        && (age <= staleAfterMs || age >= 0xffffffffu - staleAfterMs);
+}
+
+bool renewLease(std::atomic<std::uint64_t>& lease, std::uint32_t id, std::uint64_t now) noexcept {
+    auto current = lease.load();
+    if (id == 0 || ownerId(current) != id) { return false; }
+    now = std::max(now, SharedBus::monotonicMilliseconds());
+    const auto age = static_cast<std::uint32_t>(now) - static_cast<std::uint32_t>(current);
+    const auto time = age >= 0xffffffffu - staleAfterMs
+        ? static_cast<std::uint32_t>(current) : static_cast<std::uint32_t>(now);
+    return lease.compare_exchange_strong(current, tagged(id, time));
+}
+
+ClaimResult claimLease(
+    std::atomic<std::uint64_t>& lease,
+    std::atomic<std::uint64_t>& nextId,
+    std::uint32_t& localId,
+    std::uint64_t now
+) noexcept {
+    auto current = lease.load();
+    now = std::max(now, SharedBus::monotonicMilliseconds());
+    if (ownerId(current) != 0 && ownerId(current) == localId) {
+        return renewLease(lease, localId, now)
+            ? ClaimResult::owned : ClaimResult::conflict;
+    }
+    if (isFresh(current, now)) { return ClaimResult::conflict; }
+    const auto candidate = nextId.fetch_add(1);
+    if (candidate > std::numeric_limits<std::uint32_t>::max()) {
+        return ClaimResult::unavailable;
+    }
+    const auto id = static_cast<std::uint32_t>(candidate);
+    if (!lease.compare_exchange_strong(current, tagged(id, static_cast<std::uint32_t>(now)))) {
+        return ClaimResult::conflict;
+    }
+    localId = id;
+    return ClaimResult::owned;
+}
+
+void releaseLease(std::atomic<std::uint64_t>& lease, std::uint32_t& localId) noexcept {
+    auto current = lease.load();
+    if (localId != 0 && ownerId(current) == localId) {
+        lease.compare_exchange_strong(current, 0);
+    }
+    localId = 0;
+}
+
+void waitForInitialization() noexcept {
+#if defined(_WIN32)
+    Sleep(1);
+#else
+    timespec delay{0, 1000000};
+    nanosleep(&delay, nullptr);
+#endif
 }
 
 struct SharedState {
     std::atomic<std::uint32_t> magic{0};
     std::uint32_t version{busVersion};
-    std::atomic<std::uint64_t> controllerToken{0};
-    std::atomic<std::uint64_t> controllerHeartbeat{0};
+    std::atomic<std::uint64_t> nextClaimId{1};
+    std::atomic<std::uint64_t> controllerLease{0};
     std::atomic<std::uint64_t> frameSequence{0};
-    std::array<std::atomic<std::uint32_t>, targetCount> gainBits{};
-    std::atomic<std::uint32_t> unityOverride{0};
-    std::array<std::atomic<std::uint64_t>, targetCount> targetTokens{};
-    std::array<std::atomic<std::uint64_t>, targetCount> targetHeartbeats{};
+    std::array<std::atomic<std::uint64_t>, targetCount> gainBits{};
+    std::atomic<std::uint64_t> unityOverride{0};
+    std::array<std::atomic<std::uint64_t>, targetCount> targetLeases{};
 };
 
 } // namespace
 
 struct SharedBus::Impl {
-    explicit Impl(int session, std::uint64_t tokenToUse)
-        : token(tokenToUse) {
+    explicit Impl(int session) {
         const auto safeSession = session < 1 ? 1 : (session > 8 ? 8 : session);
-        name = "/mk_crossfader_v1_" + std::to_string(getuid()) + "_"
+
+#if defined(_WIN32)
+        name = L"Local\\" + std::wstring(busName, busName + std::strlen(busName))
+            + std::to_wstring(safeSession);
+        mapping = CreateFileMappingW(
+            INVALID_HANDLE_VALUE,
+            nullptr,
+            PAGE_READWRITE,
+            0,
+            static_cast<DWORD>(sizeof(SharedState)),
+            name.c_str()
+        );
+        if (mapping == nullptr) {
+            return;
+        }
+        const auto created = GetLastError() != ERROR_ALREADY_EXISTS;
+        void* mapped = MapViewOfFile(
+            mapping,
+            FILE_MAP_ALL_ACCESS,
+            0,
+            0,
+            sizeof(SharedState)
+        );
+        if (mapped == nullptr) {
+            CloseHandle(mapping);
+            mapping = nullptr;
+            return;
+        }
+#else
+        name = std::string("/") + busName + std::to_string(getuid()) + "_"
             + std::to_string(safeSession);
 
         bool created = false;
@@ -78,6 +183,20 @@ struct SharedBus::Impl {
             return;
         }
 
+        // Another process may have created the object but not sized it yet.
+        struct stat info{};
+        for (auto attempt = 0; attempt < 100; ++attempt) {
+            if (fstat(fd, &info) == 0 && info.st_size >= static_cast<off_t>(sizeof(SharedState))) {
+                break;
+            }
+            waitForInitialization();
+        }
+        if (info.st_size < static_cast<off_t>(sizeof(SharedState))) {
+            close(fd);
+            fd = -1;
+            return;
+        }
+
         void* mapped = mmap(
             nullptr,
             sizeof(SharedState),
@@ -92,6 +211,11 @@ struct SharedBus::Impl {
             return;
         }
         state = static_cast<SharedState*>(mapped);
+#endif
+
+#if defined(_WIN32)
+        state = static_cast<SharedState*>(mapped);
+#endif
 
         if (created) {
             new (state) SharedState();
@@ -105,23 +229,39 @@ struct SharedBus::Impl {
                     && state->version == busVersion) {
                     return;
                 }
-                timespec delay{0, 1000000};
-                nanosleep(&delay, nullptr);
+                waitForInitialization();
             }
+#if defined(_WIN32)
+            UnmapViewOfFile(state);
+            state = nullptr;
+            CloseHandle(mapping);
+            mapping = nullptr;
+#else
             munmap(state, sizeof(SharedState));
             state = nullptr;
             close(fd);
             fd = -1;
+#endif
         }
     }
 
     ~Impl() {
         if (state != nullptr) {
+#if defined(_WIN32)
+            UnmapViewOfFile(state);
+#else
             munmap(state, sizeof(SharedState));
+#endif
         }
+#if defined(_WIN32)
+        if (mapping != nullptr) {
+            CloseHandle(mapping);
+        }
+#else
         if (fd >= 0) {
             close(fd);
         }
+#endif
     }
 
     bool available() const noexcept {
@@ -130,14 +270,21 @@ struct SharedBus::Impl {
             && state->version == busVersion;
     }
 
+#if defined(_WIN32)
+    HANDLE mapping{nullptr};
+    std::wstring name;
+#else
     int fd{-1};
     std::string name;
-    std::uint64_t token{0};
+#endif
+    std::uint32_t controllerId{0};
+    std::uint32_t frameNumber{0};
+    std::array<std::uint32_t, targetCount> targetIds{};
     SharedState* state{nullptr};
 };
 
-SharedBus::SharedBus(int session, std::uint64_t instanceToken)
-    : impl(std::make_unique<Impl>(session, instanceToken)) {}
+SharedBus::SharedBus(int session)
+    : impl(std::make_unique<Impl>(session)) {}
 
 SharedBus::~SharedBus() {
     releaseController();
@@ -154,43 +301,15 @@ ClaimResult SharedBus::claimController(std::uint64_t nowMs) noexcept {
     if (!isAvailable()) {
         return ClaimResult::unavailable;
     }
-    auto& owner = impl->state->controllerToken;
-    auto current = owner.load(std::memory_order_acquire);
-    if (current == impl->token) {
-        impl->state->controllerHeartbeat.store(nowMs, std::memory_order_release);
-        return ClaimResult::owned;
-    }
-    const auto heartbeat = impl->state->controllerHeartbeat.load(
-        std::memory_order_acquire
-    );
-    if (current != 0 && isFresh(heartbeat, nowMs)) {
-        return ClaimResult::conflict;
-    }
-    if (owner.compare_exchange_strong(
-            current,
-            impl->token,
-            std::memory_order_acq_rel,
-            std::memory_order_acquire
-        )) {
-        impl->state->controllerHeartbeat.store(nowMs, std::memory_order_release);
-        return ClaimResult::owned;
-    }
-    return ClaimResult::conflict;
+    return claimLease(impl->state->controllerLease, impl->state->nextClaimId,
+        impl->controllerId, nowMs);
 }
 
 void SharedBus::releaseController() noexcept {
     if (!isAvailable()) {
         return;
     }
-    auto expected = impl->token;
-    if (impl->state->controllerToken.compare_exchange_strong(
-            expected,
-            0,
-            std::memory_order_acq_rel,
-            std::memory_order_acquire
-        )) {
-        impl->state->controllerHeartbeat.store(0, std::memory_order_release);
-    }
+    releaseLease(impl->state->controllerLease, impl->controllerId);
 }
 
 bool SharedBus::publish(
@@ -198,30 +317,21 @@ bool SharedBus::publish(
     bool unityOverride,
     std::uint64_t nowMs
 ) noexcept {
-    if (!isAvailable()
-        || impl->state->controllerToken.load(std::memory_order_acquire)
-            != impl->token) {
+    if (!isAvailable() || impl->controllerId == 0
+        || ownerId(impl->state->controllerLease.load()) != impl->controllerId) {
         return false;
     }
-
-    auto sequence = impl->state->frameSequence.load(std::memory_order_relaxed);
-    if ((sequence & 1u) != 0u) {
-        ++sequence;
-    }
-    impl->state->frameSequence.store(sequence + 1u, std::memory_order_release);
+    const auto id = impl->controllerId;
+    impl->frameNumber += 2u;
+    // Tag every cell as well as the sequence. A stalled former publisher may
+    // resume after takeover; its writes must never be accepted as the new frame.
+    impl->state->frameSequence.store(tagged(id, impl->frameNumber - 1u));
     for (std::size_t i = 0; i < frame.size(); ++i) {
-        impl->state->gainBits[i].store(
-            floatBits(frame[i]),
-            std::memory_order_relaxed
-        );
+        impl->state->gainBits[i].store(tagged(id, floatBits(frame[i])));
     }
-    impl->state->unityOverride.store(
-        unityOverride ? 1u : 0u,
-        std::memory_order_relaxed
-    );
-    impl->state->frameSequence.store(sequence + 2u, std::memory_order_release);
-    impl->state->controllerHeartbeat.store(nowMs, std::memory_order_release);
-    return true;
+    impl->state->unityOverride.store(tagged(id, unityOverride ? 1u : 0u));
+    impl->state->frameSequence.store(tagged(id, impl->frameNumber));
+    return renewLease(impl->state->controllerLease, id, nowMs);
 }
 
 FrameRead SharedBus::read(std::uint64_t nowMs) const noexcept {
@@ -231,33 +341,25 @@ FrameRead SharedBus::read(std::uint64_t nowMs) const noexcept {
         return result;
     }
 
-    const auto token = impl->state->controllerToken.load(std::memory_order_acquire);
-    const auto heartbeat = impl->state->controllerHeartbeat.load(
-        std::memory_order_acquire
-    );
-    if (token == 0 || !isFresh(heartbeat, nowMs)) {
-        return result;
-    }
-
     for (auto attempt = 0; attempt < 3; ++attempt) {
-        const auto before = impl->state->frameSequence.load(
-            std::memory_order_acquire
-        );
-        if ((before & 1u) != 0u) {
+        const auto lease = impl->state->controllerLease.load();
+        const auto id = ownerId(lease);
+        const auto before = impl->state->frameSequence.load();
+        if (!isFresh(lease, nowMs) || ownerId(before) != id || (before & 1u) != 0u) {
             continue;
         }
+        auto valid = true;
         for (std::size_t i = 0; i < result.gains.size(); ++i) {
-            result.gains[i] = bitsFloat(
-                impl->state->gainBits[i].load(std::memory_order_relaxed)
-            );
+            const auto gain = impl->state->gainBits[i].load();
+            valid = valid && ownerId(gain) == id;
+            result.gains[i] = bitsFloat(static_cast<std::uint32_t>(gain));
         }
-        result.unityOverride = impl->state->unityOverride.load(
-            std::memory_order_relaxed
-        ) != 0;
-        const auto after = impl->state->frameSequence.load(
-            std::memory_order_acquire
-        );
-        if (before == after && (after & 1u) == 0u) {
+        const auto unity = impl->state->unityOverride.load();
+        result.unityOverride = static_cast<std::uint32_t>(unity) != 0;
+        const auto after = impl->state->frameSequence.load();
+        const auto finalLease = impl->state->controllerLease.load();
+        if (valid && ownerId(unity) == id && before == after
+            && ownerId(finalLease) == id && isFresh(finalLease, nowMs)) {
             result.connected = true;
             return result;
         }
@@ -272,49 +374,15 @@ ClaimResult SharedBus::claimTarget(
     if (!isAvailable() || slot >= targetCount) {
         return ClaimResult::unavailable;
     }
-    auto& owner = impl->state->targetTokens[slot];
-    auto current = owner.load(std::memory_order_acquire);
-    if (current == impl->token) {
-        impl->state->targetHeartbeats[slot].store(
-            nowMs,
-            std::memory_order_release
-        );
-        return ClaimResult::owned;
-    }
-    const auto heartbeat = impl->state->targetHeartbeats[slot].load(
-        std::memory_order_acquire
-    );
-    if (current != 0 && isFresh(heartbeat, nowMs)) {
-        return ClaimResult::conflict;
-    }
-    if (owner.compare_exchange_strong(
-            current,
-            impl->token,
-            std::memory_order_acq_rel,
-            std::memory_order_acquire
-        )) {
-        impl->state->targetHeartbeats[slot].store(
-            nowMs,
-            std::memory_order_release
-        );
-        return ClaimResult::owned;
-    }
-    return ClaimResult::conflict;
+    return claimLease(impl->state->targetLeases[slot], impl->state->nextClaimId,
+        impl->targetIds[slot], nowMs);
 }
 
 void SharedBus::releaseTarget(std::size_t slot) noexcept {
     if (!isAvailable() || slot >= targetCount) {
         return;
     }
-    auto expected = impl->token;
-    if (impl->state->targetTokens[slot].compare_exchange_strong(
-            expected,
-            0,
-            std::memory_order_acq_rel,
-            std::memory_order_acquire
-        )) {
-        impl->state->targetHeartbeats[slot].store(0, std::memory_order_release);
-    }
+    releaseLease(impl->state->targetLeases[slot], impl->targetIds[slot]);
 }
 
 int SharedBus::activeTargetCount(std::uint64_t nowMs) const noexcept {
@@ -323,13 +391,7 @@ int SharedBus::activeTargetCount(std::uint64_t nowMs) const noexcept {
     }
     auto count = 0;
     for (std::size_t i = 0; i < targetCount; ++i) {
-        const auto token = impl->state->targetTokens[i].load(
-            std::memory_order_acquire
-        );
-        const auto heartbeat = impl->state->targetHeartbeats[i].load(
-            std::memory_order_acquire
-        );
-        if (token != 0 && isFresh(heartbeat, nowMs)) {
+        if (isFresh(impl->state->targetLeases[i].load(), nowMs)) {
             ++count;
         }
     }
@@ -337,20 +399,14 @@ int SharedBus::activeTargetCount(std::uint64_t nowMs) const noexcept {
 }
 
 std::uint64_t SharedBus::monotonicMilliseconds() noexcept {
+#if defined(_WIN32)
+    return static_cast<std::uint64_t>(GetTickCount64());
+#else
     timespec now{};
     clock_gettime(CLOCK_MONOTONIC, &now);
     return static_cast<std::uint64_t>(now.tv_sec) * 1000u
         + static_cast<std::uint64_t>(now.tv_nsec / 1000000u);
-}
-
-std::uint64_t SharedBus::makeInstanceToken(const void* address) noexcept {
-    const auto now = monotonicMilliseconds();
-    auto value = static_cast<std::uint64_t>(
-        reinterpret_cast<std::uintptr_t>(address)
-    );
-    value ^= static_cast<std::uint64_t>(getpid()) << 32u;
-    value ^= now + 0x9e3779b97f4a7c15ULL + (value << 6u) + (value >> 2u);
-    return value == 0 ? 1 : value;
+#endif
 }
 
 } // namespace mkxf

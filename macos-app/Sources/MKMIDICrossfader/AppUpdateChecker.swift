@@ -10,7 +10,14 @@ struct AppSemanticVersion: Comparable, Equatable {
         if normalized.first == "v" || normalized.first == "V" {
             normalized.removeFirst()
         }
-        normalized = String(normalized.split(separator: "+", maxSplits: 1)[0])
+        let buildParts = normalized.split(
+            separator: "+", maxSplits: 1, omittingEmptySubsequences: false
+        )
+        guard let version = buildParts.first, !version.isEmpty else { return nil }
+        if buildParts.count == 2 {
+            guard Self.validIdentifiers(buildParts[1], prerelease: false) else { return nil }
+        }
+        normalized = String(version)
 
         let versionParts = normalized.split(
             separator: "-",
@@ -27,7 +34,10 @@ struct AppSemanticVersion: Comparable, Equatable {
 
         var parsedComponents: [Int] = []
         for part in numberParts {
-            guard !part.isEmpty, let number = Int(part), number >= 0 else {
+            guard Self.isDigits(part),
+                part.count == 1 || part.first != "0",
+                let number = Int(part)
+            else {
                 return nil
             }
             parsedComponents.append(number)
@@ -38,14 +48,31 @@ struct AppSemanticVersion: Comparable, Equatable {
                 separator: ".",
                 omittingEmptySubsequences: false
             )
-            guard !identifiers.isEmpty, identifiers.allSatisfy({ !$0.isEmpty }) else {
+            guard Self.validIdentifiers(versionParts[1], prerelease: true) else {
                 return nil
             }
             prerelease = identifiers.map(String.init)
         } else {
             prerelease = nil
         }
+        while parsedComponents.count > 1 && parsedComponents.last == 0 {
+            parsedComponents.removeLast()
+        }
         components = parsedComponents
+    }
+
+    private static func isDigits<S: StringProtocol>(_ value: S) -> Bool {
+        !value.isEmpty && value.utf8.allSatisfy { (48...57).contains($0) }
+    }
+
+    private static func validIdentifiers(_ value: Substring, prerelease: Bool) -> Bool {
+        let parts = value.split(separator: ".", omittingEmptySubsequences: false)
+        return !parts.isEmpty && parts.allSatisfy { part in
+            !part.isEmpty && part.utf8.allSatisfy {
+                (48...57).contains($0) || (65...90).contains($0)
+                    || (97...122).contains($0) || $0 == 45
+            } && (!prerelease || !isDigits(part) || part.count == 1 || part.first != "0")
+        }
     }
 
     static func < (lhs: Self, rhs: Self) -> Bool {
@@ -81,14 +108,14 @@ struct AppSemanticVersion: Comparable, Equatable {
                 continue
             }
 
-            switch (Int(left), Int(right)) {
-            case let (.some(leftNumber), .some(rightNumber)):
-                return leftNumber < rightNumber
-            case (.some, nil):
+            switch (isDigits(left), isDigits(right)) {
+            case (true, true):
+                return left.count == right.count ? left < right : left.count < right.count
+            case (true, false):
                 return true
-            case (nil, .some):
+            case (false, true):
                 return false
-            case (nil, nil):
+            case (false, false):
                 return left < right
             }
         }
@@ -246,7 +273,7 @@ final class AppUpdateChecker: ObservableObject {
     private static var bundledVersion: String {
         Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "0.2.9"
+        ) as? String ?? "0.3.0"
     }
 
     private static func displayVersion(_ value: String) -> String {

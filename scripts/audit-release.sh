@@ -5,27 +5,61 @@ set -euo pipefail
 ROOT="${0:A:h:h}"
 PACKAGE="${1:-}"
 
-if [[ -z "$PACKAGE" || ! -f "$PACKAGE" ]]; then
-    print -u2 "Usage: $0 /path/to/MK-Crossfader.pkg"
+if [[ "$PACKAGE" != "--source-only" && ( -z "$PACKAGE" || ! -f "$PACKAGE" ) ]]; then
+    print -u2 "Usage: $0 --source-only | /path/to/MK-Crossfader.pkg"
     exit 2
 fi
 
-SOURCE_PATTERN='(/Users/[^/[:space:]]+/|/Volumes/|-----BEGIN [A-Z ]*PRIVATE KEY-----|github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9]+|sk-(proj-)?[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]+|AKIA[0-9A-Z]{16}|[A-Za-z0-9._%+-]+@[A-Za-z][A-Za-z0-9.-]*\.[A-Za-z]{2,})'
+SOURCE_PATTERN='([/]Users/[A-Za-z0-9._-]+/|[/]Volumes/|-----BEGIN [A-Z ]*PRIVATE KEY-----|github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9]+|sk-(proj-)?[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]+|AKIA[0-9A-Z]{16}|[A-Za-z0-9._%+-]+@[A-Za-z][A-Za-z0-9.-]*\.[A-Za-z]{2,})'
 
-print "== Tracked source privacy scan =="
-if git -C "$ROOT" grep -nI -E "$SOURCE_PATTERN" -- . \
-    ':(exclude)scripts/audit-release.sh' \
-    ':(exclude)scripts/privacy-audit.sh'; then
-    print -u2 "Private data was found in tracked source."
+print "== Source privacy scan =="
+if git -C "$ROOT" grep --untracked --exclude-standard -lI -E "$SOURCE_PATTERN" -- .; then
+    print -u2 "Private data was found in source."
     exit 1
+else
+    scan_status=$?
+    if (( scan_status != 1 )); then
+        print -u2 "Source privacy scan could not complete."
+        exit "$scan_status"
+    fi
+fi
+
+while IFS= read -r -d '' file; do
+    [[ -e "$ROOT/$file" ]] || continue
+    if print -r -- "$file" | grep -Eq '(^|/)(\.env($|\.)|id_(rsa|ed25519)($|\.)|[^/]+\.(pem|p12|pfx|key|mobileprovision)$|credentials?($|\.)|secrets?($|\.))'; then
+        print -u2 "A sensitive filename is included in the source file set."
+        exit 1
+    fi
+done < <(git -C "$ROOT" ls-files --cached --others --exclude-standard -z)
+
+if [[ "$PACKAGE" == "--source-only" ]]; then
+    print "Source privacy scan passed."
+    exit 0
 fi
 
 TEMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/mk-crossfader-audit.XXXXXX")"
 EXPANDED="$TEMP_ROOT/expanded"
-STRINGS_FILE="$TEMP_ROOT/executable-strings.txt"
 trap 'rm -rf "$TEMP_ROOT"' EXIT
 
+# Keep matched values out of build logs, including when a release fails.
+private_data_found() {
+    local scan_status
+    if rg -a -o --no-filename "$SOURCE_PATTERN" "$@" > "$TEMP_ROOT/private-matches"; then
+        grep -v '^[/]Users/Shared/$' "$TEMP_ROOT/private-matches" > /dev/null
+    else
+        scan_status=$?
+        if (( scan_status != 1 )); then
+            print -u2 "Executable or payload privacy scan could not complete."
+            exit "$scan_status"
+        fi
+        return 1
+    fi
+}
+
 pkgutil --expand-full "$PACKAGE" "$EXPANDED"
+
+print "== Archive container metadata =="
+python3 "$ROOT/scripts/audit-installer-container.py" "$PACKAGE"
 
 print "== Installer structure =="
 if [[ -n "$(find "$EXPANDED" -type d -name Scripts -print -quit)" ]]; then
@@ -44,6 +78,31 @@ if [[ -z "$APP" || -z "$PLUGIN" ]]; then
     exit 1
 fi
 
+print "== Installed setup guides =="
+DOCS="$EXPANDED/MKCrossfaderDocuments.pkg/Payload/Library/Application Support/MK Crossfader"
+for guide in START_HERE INSTALLATION MASCHINE_SETUP ABLETON_SETUP; do
+    if [[ ! -s "$DOCS/$guide.md" ]]; then
+        print -u2 "Missing installed setup guide: $guide.md"
+        exit 1
+    fi
+done
+while IFS= read -r -d '' document; do
+    case "${document:t}" in
+        START_HERE.md|INSTALLATION.md|MASCHINE_SETUP.md|ABLETON_SETUP.md|LICENSE.txt|THIRD_PARTY_NOTICES.md) ;;
+        *) print -u2 "An unexpected file was found in the installed documentation."; exit 1 ;;
+    esac
+done < <(find "$DOCS" -type f -print0)
+while IFS= read -r link; do
+    link="${link#\]\(}"
+    link="${link%\)}"
+    [[ "$link" == *:* || "$link" == \#* ]] && continue
+    link="${link%%\#*}"
+    if [[ ! -e "$DOCS/$link" ]]; then
+        print -u2 "Broken installed documentation link: $link"
+        exit 1
+    fi
+done < <(rg --no-filename -o '\]\([^)]*\)' "$DOCS" --glob '*.md')
+
 APP_BINARY="$APP/Contents/MacOS/MKMIDICrossfader"
 PLUGIN_BINARY="$PLUGIN/Contents/MacOS/MK Crossfader"
 
@@ -58,10 +117,7 @@ while IFS= read -r plist; do
 done < <(find "$APP" "$PLUGIN" -type f -name '*.plist' -print)
 
 print "== Executable privacy scan =="
-strings -a "$APP_BINARY" > "$STRINGS_FILE"
-strings -a "$PLUGIN_BINARY" >> "$STRINGS_FILE"
-
-if rg -n "$SOURCE_PATTERN" "$STRINGS_FILE"; then
+if private_data_found "$APP_BINARY" "$PLUGIN_BINARY"; then
     print -u2 "Private data was found in an executable."
     exit 1
 fi
@@ -129,10 +185,9 @@ for bom in "$EXPANDED"/*.pkg/Bom; do
     fi
 done
 
-find "$EXPANDED" -type f -print0 | xargs -0 strings -a 2>/dev/null \
-    | rg -n "$SOURCE_PATTERN" && {
-        print -u2 "Private data was found in the installer payload."
-        exit 1
-    }
+if private_data_found "$EXPANDED"; then
+    print -u2 "Private data was found in the installer payload."
+    exit 1
+fi
 
 print "Release audit passed."

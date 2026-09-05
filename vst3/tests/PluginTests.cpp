@@ -199,9 +199,9 @@ void testEngine() {
 
 void testSharedBus() {
     const auto now = mkxf::SharedBus::monotonicMilliseconds();
-    mkxf::SharedBus controller(8, 0x11001);
-    mkxf::SharedBus target(8, 0x22002);
-    mkxf::SharedBus duplicate(8, 0x33003);
+    mkxf::SharedBus controller(8);
+    mkxf::SharedBus target(8);
+    mkxf::SharedBus duplicate(8);
     require(controller.isAvailable(), "Controller shared bus was unavailable");
     require(target.isAvailable(), "Target shared bus was unavailable");
     require(

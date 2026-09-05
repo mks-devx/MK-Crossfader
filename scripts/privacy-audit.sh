@@ -11,7 +11,7 @@ report_failure() {
 
 is_public_commit_email() {
     case "$1" in
-        *@users.noreply.github.com|noreply@github.com|checkpointer@noreply)
+        *@users.noreply.github.com|noreply@github[.]com|checkpointer@noreply)
             return 0
             ;;
         *)
@@ -44,7 +44,7 @@ for commit in $public_commits; do
 
     if git grep -n -I -E '/Users/[A-Za-z0-9._-]+/' "$commit" -- . \
         ':(exclude)scripts/privacy-audit.sh' 2>/dev/null \
-        | grep -qv '/Users/Shared/'; then
+        | grep -qv '[/]Users/Shared/'; then
         report_failure "commit ${commit} contains a personal macOS home path"
     fi
 
@@ -73,7 +73,7 @@ for commit in $public_commits; do
     while IFS= read -r media; do
         if git show "${commit}:${media}" 2>/dev/null \
             | strings -a \
-            | grep -qE '/Users/[A-Za-z0-9._-]+/|/Volumes/'; then
+            | grep -qE '[/]Users/[A-Za-z0-9._-]+/|[/]Volumes/'; then
             report_failure "commit ${commit} contains private metadata in ${media}"
         fi
     done < <(
