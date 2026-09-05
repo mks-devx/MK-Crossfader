@@ -6,6 +6,9 @@
 - Swift 6 toolchain for the app
 - CMake 3.22 or later for the VST3
 - Git and internet access for the default JUCE download
+- Python 3 and ripgrep (`rg`) for installer validation and its regression tests
+
+With Homebrew, install ripgrep using `brew install ripgrep`.
 
 The VST3 build pins JUCE 8.0.15. Set `JUCE_SOURCE_DIR` to a compatible local
 checkout if the dependency should not be downloaded. Without that variable,
@@ -78,6 +81,7 @@ Run the preflight and its regression tests separately:
 bash scripts/tests/privacy-preflight.sh
 ruby scripts/tests/ci-policy.rb
 python3 scripts/tests/installer-preflight.py
+python3 scripts/tests/installer-container.py
 ```
 
 A distributable build requires both signing identities and notarisation:

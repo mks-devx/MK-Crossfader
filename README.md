@@ -227,8 +227,9 @@ uses JUCE 8.0.15, fetched automatically unless `JUCE_SOURCE_DIR` points to a
 local checkout. This development revision configures macOS and Windows VST3
 tests, macOS app tests, host-loading checks, cross-process link checks and the
 public-history privacy audit. It does not package or upload downloads. The
-Windows workflow has not yet been published or run on GitHub. Passing CI is not
-a substitute for signing, notarisation or testing in a DAW on supported hardware.
+Windows workflow results are available in GitHub Actions for each revision.
+Passing CI is not a substitute for signing, notarisation or testing in a DAW on
+supported hardware.
 
 ## Support And Updates
 

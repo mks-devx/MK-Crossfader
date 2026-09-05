@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+      - name: Install audit dependency
+        run: brew install ripgrep
       - name: Run Swift tests
         run: swift test --package-path macos-app
       - name: Test source privacy preflight
