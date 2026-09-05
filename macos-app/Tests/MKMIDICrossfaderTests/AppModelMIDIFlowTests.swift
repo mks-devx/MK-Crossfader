@@ -446,6 +446,130 @@ func quickAddWorkflowsAreAdditive() throws {
     #expect(engine.sentMessages.isEmpty)
 }
 
+@Test("Built-in presets preserve saved snapshots and routing, and persist silently",
+      arguments: BuiltInCrossfadePreset.allCases)
+@MainActor
+func builtInPresetPersistence(preset: BuiltInCrossfadePreset) {
+    let engine = RecordingMIDIEngine()
+    let defaults = makeDefaults()
+    let model = AppModel(engine: engine, defaults: defaults)
+    model.addParameterTarget()
+    model.mode = .pairFade
+    model.curve = .fastCut
+    model.minimumLevel = .minus18DB
+    model.isReversed = true
+    model.isTravelReversed = true
+    model.outputChannel = 4
+    let original = model.targets
+    model.saveScene(name: "Before applying")
+    let saved = model.scenes
+    engine.sentMessages.removeAll()
+
+    model.applyBuiltInPreset(preset)
+
+    #expect(model.targets == preset.applying(to: original))
+    #expect(model.scenes == saved)
+    #expect(model.mode == .standard)
+    #expect(model.curve == preset.curve)
+    #expect(model.minimumLevel == .kill)
+    #expect(!model.isReversed && !model.isTravelReversed && !model.isEnabled)
+    #expect(model.outputChannel == 4)
+    #expect(model.selectedSourceID == 1)
+    #expect(model.learnedChannel == 13 && model.learnedController == 48)
+    #expect(engine.sentMessages.isEmpty)
+
+    let reloaded = AppModel(engine: RecordingMIDIEngine(), defaults: defaults)
+    #expect(reloaded.targets == model.targets)
+    #expect(reloaded.curve == preset.curve)
+    #expect(reloaded.mode == .standard && reloaded.minimumLevel == .kill)
+    #expect(!reloaded.isReversed && !reloaded.isTravelReversed)
+    #expect(reloaded.scenes == saved)
+
+    model.loadScene(id: saved[0].id)
+    #expect(model.targets == original)
+    #expect(model.mode == .pairFade && model.curve == .fastCut)
+    #expect(model.minimumLevel == .minus18DB)
+    #expect(model.isReversed && model.isTravelReversed)
+}
+
+@Test("Built-in presets cannot change an active setup",
+      arguments: BuiltInCrossfadePreset.allCases)
+@MainActor
+func builtInPresetActiveGuard(preset: BuiltInCrossfadePreset) async {
+    let engine = RecordingMIDIEngine()
+    let model = AppModel(engine: engine, defaults: makeDefaults())
+    model.mode = .pairFade
+    model.curve = .fastCut
+    let original = model.targets
+    engine.emit(channel: 13, controller: 48, value: 64)
+    await drainMainQueue()
+    model.isEnabled = true
+    engine.sentMessages.removeAll()
+
+    #expect(!model.canApplyBuiltInPreset)
+    model.applyBuiltInPreset(preset)
+
+    #expect(model.targets == original)
+    #expect(model.mode == .pairFade && model.curve == .fastCut)
+    #expect(model.isEnabled)
+    #expect(engine.sentMessages.isEmpty)
+}
+
+@Test("Built-in presets reject empty or all-Off setups without consuming saved slots")
+@MainActor
+func builtInPresetAvailability() {
+    let model = AppModel(engine: RecordingMIDIEngine(), defaults: makeDefaults())
+    for index in 0..<16 { model.saveScene(name: "Saved \(index)") }
+    let saved = model.scenes
+    #expect(!model.canSaveScene)
+    #expect(model.canApplyBuiltInPreset)
+    model.applyBuiltInPreset(.sceneMorph)
+    #expect(model.scenes == saved)
+    for target in model.targets {
+        model.updateTargetBehavior(id: target.id, behavior: .off)
+    }
+    #expect(!model.canApplyBuiltInPreset)
+    model.applyBuiltInPreset(.performanceAB)
+    #expect(model.curve == .smooth)
+    for target in model.targets { model.removeTarget(id: target.id) }
+    #expect(!model.canApplyBuiltInPreset)
+    model.applyBuiltInPreset(.performanceAB)
+    #expect(model.targets.isEmpty && model.curve == .smooth)
+    #expect(model.scenes == saved)
+}
+
+@Test("Built-in presets produce distinct A/B and Range MIDI output",
+      arguments: BuiltInCrossfadePreset.allCases)
+@MainActor
+func builtInPresetMIDIOutput(preset: BuiltInCrossfadePreset) async {
+    let engine = RecordingMIDIEngine()
+    let model = AppModel(engine: engine, defaults: makeDefaults())
+    model.applyBuiltInPreset(preset)
+    engine.emit(channel: 13, controller: 48, value: 0)
+    await drainMainQueue()
+    model.isEnabled = true
+    #expect(engine.sentMessages.map(\.value) == [95, 0])
+
+    engine.sentMessages.removeAll()
+    engine.emit(channel: 13, controller: 48, value: 64)
+    await drainMainQueue()
+    // Full Centre keeps A at 95, so only B needs a new message.
+    let midpoint: [RecordingMIDIEngine.Message] = preset == .performanceAB
+        ? [.init(value: 95, channel: 15, controller: 111)]
+        : [.init(value: 47, channel: 15, controller: 110),
+           .init(value: 48, channel: 15, controller: 111)]
+    #expect(engine.sentMessages == midpoint)
+
+    engine.sentMessages.removeAll()
+    engine.emit(channel: 13, controller: 48, value: 127)
+    await drainMainQueue()
+    let right: [RecordingMIDIEngine.Message] = preset == .performanceAB
+        ? [.init(value: 0, channel: 15, controller: 110)]
+        : [.init(value: 0, channel: 15, controller: 110),
+           .init(value: 95, channel: 15, controller: 111)]
+    #expect(engine.sentMessages == right)
+}
+
 @Test("Send Learn emits movement and restores the active value")
 @MainActor
 func sendLearnPulse() async throws {
@@ -522,7 +646,7 @@ func sendLearnReturnSafety() async throws {
 
 @Test("Mapping lifecycle changes cancel pending Learn messages", arguments: [
     "route", "kind", "behavior", "return", "channel", "source", "disconnect",
-    "remove", "preset", "pause", "terminate",
+    "remove", "preset", "performanceAB", "sceneMorph", "pause", "terminate",
 ])
 @MainActor
 func pendingLearnCancellation(action: String) async throws {
@@ -548,6 +672,8 @@ func pendingLearnCancellation(action: String) async throws {
         model.refreshSources()
     case "remove": model.removeTarget(id: target.id)
     case "preset": model.loadScene(id: model.scenes[0].id)
+    case "performanceAB": model.applyBuiltInPreset(.performanceAB)
+    case "sceneMorph": model.applyBuiltInPreset(.sceneMorph)
     case "pause": model.restoreAndPause()
     case "terminate": model.prepareForTermination()
     default: Issue.record("Unknown lifecycle action")

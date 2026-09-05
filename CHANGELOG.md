@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-05 - 0.3.1
+
+macOS maintenance release. Windows support remains source-only, with no Windows
+download included. The VST3 audio processing and saved-state format are unchanged
+from 0.3.0; its version is aligned with the combined installer.
+
+### MK MIDI Crossfader
+
+- Restore Performance A/B and Scene Morph as separate built-in presets, with
+  confirmation and an optional saved snapshot before applying. Keep target
+  assignments, names, endpoints, custom shapes and Return Values intact.
+- Keep additive quick actions and saved user presets available alongside the
+  built-in presets; applying a built-in preset requires paused output.
+- Check published release pages for a matching macOS installer and checksum;
+  skip withdrawn, incomplete, draft and unrelated downloads.
+- Keep stable releases as the default and allow explicit testing-prerelease
+  discovery, clearly labelled as a preview.
+- Select the highest eligible version across paginated results and reject
+  release links outside the official repository.
+- Report missing installers and failed checks without claiming a local build
+  is the latest public release. Checks remain manual, with no automatic install.
+
+### Packaging
+
+- Include embedded dependency licence texts and attribution in the installed
+  third-party notices, with a regression check for their presence.
+
 ## 2026-09-05 - 0.3.0 Preview
 
 This revision is intended for testing. A clean-Mac browser-download installation

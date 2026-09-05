@@ -5,6 +5,8 @@ struct AppSemanticVersion: Comparable, Equatable {
     private let components: [Int]
     private let prerelease: [String]?
 
+    var isPrerelease: Bool { prerelease != nil }
+
     init?(_ value: String) {
         var normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if normalized.first == "v" || normalized.first == "V" {
@@ -128,6 +130,7 @@ enum AppUpdateState: Equatable {
     case checking(current: String)
     case upToDate(current: String)
     case updateAvailable(current: String, latest: String, releaseURL: URL)
+    case previewAvailable(current: String, latest: String, releaseURL: URL)
     case noPublishedRelease(current: String)
     case failed(current: String)
 
@@ -144,12 +147,14 @@ enum AppUpdateState: Equatable {
             return "Version \(current)"
         case .checking:
             return "Checking GitHub..."
-        case .upToDate(let current):
-            return "Version \(current) is up to date"
+        case .upToDate:
+            return "No newer matching installer found"
         case .updateAvailable(_, let latest, _):
             return "Version \(latest) is available"
+        case .previewAvailable(_, let latest, _):
+            return "Testing prerelease \(latest) is available"
         case .noPublishedRelease:
-            return "No public release is available yet"
+            return "No matching installer available"
         case .failed:
             return "Could not check GitHub"
         }
@@ -163,7 +168,7 @@ enum AppUpdateState: Equatable {
             return "arrow.triangle.2.circlepath"
         case .upToDate:
             return "checkmark.circle"
-        case .updateAvailable:
+        case .updateAvailable, .previewAvailable:
             return "arrow.down.circle"
         case .noPublishedRelease:
             return "shippingbox"
@@ -173,10 +178,12 @@ enum AppUpdateState: Equatable {
     }
 
     var releaseURL: URL? {
-        if case .updateAvailable(_, _, let releaseURL) = self {
+        switch self {
+        case .updateAvailable(_, _, let releaseURL), .previewAvailable(_, _, let releaseURL):
             return releaseURL
+        default:
+            return nil
         }
-        return nil
     }
 }
 
@@ -189,11 +196,14 @@ final class AppUpdateChecker: ObservableObject {
     )!
 
     @Published private(set) var state: AppUpdateState
+    @Published var includeTestingPrereleases = false {
+        didSet { resetResult() }
+    }
 
     let currentVersion: String
 
-    private let latestReleaseURL = URL(
-        string: "https://api.github.com/repos/mks-devx/MK-Crossfader/releases/latest"
+    private let releasesAPIURL = URL(
+        string: "https://api.github.com/repos/mks-devx/MK-Crossfader/releases"
     )!
     private let dataLoader: DataLoader
 
@@ -209,59 +219,66 @@ final class AppUpdateChecker: ObservableObject {
         state = .idle(current: resolvedVersion)
     }
 
-    func checkForUpdates() async {
+    func resetResult() {
+        guard !state.isChecking else { return }
+        state = .idle(current: currentVersion)
+    }
+
+    func checkForUpdates(includePrereleases: Bool? = nil) async {
         guard !state.isChecking else {
             return
         }
         state = .checking(current: currentVersion)
-
-        var request = URLRequest(url: latestReleaseURL)
-        request.timeoutInterval = 10
-        request.setValue(
-            "application/vnd.github+json",
-            forHTTPHeaderField: "Accept"
-        )
-        request.setValue(
-            "2026-03-10",
-            forHTTPHeaderField: "X-GitHub-Api-Version"
-        )
-        request.setValue(
-            "MK-Crossfader/\(currentVersion)",
-            forHTTPHeaderField: "User-Agent"
-        )
+        let includePrereleases = includePrereleases ?? includeTestingPrereleases
 
         do {
-            let (data, response) = try await dataLoader(request)
-            guard let response = response as? HTTPURLResponse else {
-                state = .failed(current: currentVersion)
-                return
+            guard let current = AppSemanticVersion(currentVersion) else {
+                throw URLError(.cannotParseResponse)
             }
-
-            if response.statusCode == 404 {
+            var candidate: (release: GitHubRelease, version: AppSemanticVersion)?
+            // Release creation order is not version order. Check all bounded pages,
+            // rather than treating the first (possibly withdrawn) release as latest.
+            for page in 1...10 {
+                var components = URLComponents(url: releasesAPIURL, resolvingAgainstBaseURL: false)!
+                components.queryItems = [URLQueryItem(name: "per_page", value: "100"),
+                                         URLQueryItem(name: "page", value: String(page))]
+                let url = components.url!
+                var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
+                request.timeoutInterval = 10
+                request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+                request.setValue("2026-03-10", forHTTPHeaderField: "X-GitHub-Api-Version")
+                request.setValue("MK-Crossfader/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+                let (data, response) = try await dataLoader(request)
+                try Task.checkCancellation()
+                guard let response = response as? HTTPURLResponse,
+                    response.url == url, response.statusCode == 200
+                else {
+                    throw URLError(.badServerResponse)
+                }
+                let releases = try JSONDecoder().decode([GitHubRelease].self, from: data)
+                for release in releases {
+                    guard let version = release.installableVersion,
+                        includePrereleases || !release.isPreview
+                    else { continue }
+                    if let existing = candidate {
+                        guard existing.version < version
+                            || (existing.version == version && existing.release.isPreview && !release.isPreview)
+                        else { continue }
+                    }
+                    candidate = (release, version)
+                }
+                if releases.count < 100 { break }
+                guard page < 10 else { throw URLError(.dataLengthExceedsMaximum) }
+            }
+            guard let candidate else {
                 state = .noPublishedRelease(current: currentVersion)
                 return
             }
-            guard response.statusCode == 200 else {
-                state = .failed(current: currentVersion)
-                return
-            }
-
-            let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
-            guard
-                let current = AppSemanticVersion(currentVersion),
-                let latest = AppSemanticVersion(release.tagName)
-            else {
-                state = .failed(current: currentVersion)
-                return
-            }
-
-            let latestDisplayVersion = Self.displayVersion(release.tagName)
-            if latest > current {
-                state = .updateAvailable(
-                    current: currentVersion,
-                    latest: latestDisplayVersion,
-                    releaseURL: release.htmlURL
-                )
+            let release = candidate.release
+            if candidate.version > current {
+                state = release.isPreview
+                    ? .previewAvailable(current: currentVersion, latest: release.displayVersion, releaseURL: release.htmlURL)
+                    : .updateAvailable(current: currentVersion, latest: release.displayVersion, releaseURL: release.htmlURL)
             } else {
                 state = .upToDate(current: currentVersion)
             }
@@ -273,23 +290,63 @@ final class AppUpdateChecker: ObservableObject {
     private static var bundledVersion: String {
         Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "0.3.0"
-    }
-
-    private static func displayVersion(_ value: String) -> String {
-        guard value.first == "v" || value.first == "V" else {
-            return value
-        }
-        return String(value.dropFirst())
+        ) as? String ?? "0.3.1"
     }
 }
 
 private struct GitHubRelease: Decodable {
     let tagName: String
     let htmlURL: URL
+    let draft: Bool
+    let prerelease: Bool
+    let assets: [Asset]
+
+    var displayVersion: String {
+        tagName.first == "v" || tagName.first == "V" ? String(tagName.dropFirst()) : tagName
+    }
+
+    var isPreview: Bool {
+        prerelease || AppSemanticVersion(tagName)?.isPrerelease == true
+    }
+
+    var installableVersion: AppSemanticVersion? {
+        guard !draft, tagName == tagName.trimmingCharacters(in: .whitespacesAndNewlines),
+            let version = AppSemanticVersion(tagName),
+            Self.isOfficialURL(htmlURL, path: "/mks-devx/MK-Crossfader/releases/tag/\(tagName)")
+        else { return nil }
+        let package = "MK-Crossfader-\(displayVersion).pkg"
+        for name in [package, package + ".sha256"] {
+            guard assets.contains(where: {
+                $0.name == name && $0.state == "uploaded" && $0.size > 0
+                    && Self.isOfficialURL($0.browserDownloadURL,
+                        path: "/mks-devx/MK-Crossfader/releases/download/\(tagName)/\(name)")
+            }) else { return nil }
+        }
+        return version
+    }
+
+    private static func isOfficialURL(_ url: URL, path: String) -> Bool {
+        url.scheme == "https" && url.host == "github.com"
+            && (url.port == nil || url.port == 443)
+            && url.user == nil && url.password == nil
+            && url.query == nil && url.fragment == nil && url.path == path
+    }
+
+    struct Asset: Decodable {
+        let name: String
+        let state: String
+        let size: Int
+        let browserDownloadURL: URL
+
+        enum CodingKeys: String, CodingKey {
+            case name, state, size
+            case browserDownloadURL = "browser_download_url"
+        }
+    }
 
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
         case htmlURL = "html_url"
+        case draft, prerelease, assets
     }
 }

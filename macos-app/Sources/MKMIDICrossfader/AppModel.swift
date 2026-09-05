@@ -172,6 +172,10 @@ final class AppModel: ObservableObject {
         scenes.count < 16
     }
 
+    var canApplyBuiltInPreset: Bool {
+        !isEnabled && targets.contains(where: \.participatesInOutput)
+    }
+
     var hasCrossfadeTargets: Bool {
         targets.contains { target in
             target.participatesInOutput
@@ -541,6 +545,18 @@ final class AppModel: ObservableObject {
             isTravelReversed: isTravelReversed
         )
         scenes.append(scene)
+    }
+
+    func applyBuiltInPreset(_ preset: BuiltInCrossfadePreset) {
+        guard canApplyBuiltInPreset else { return }
+        cancelPendingMappings()
+        lastSentValues.removeAll()
+        targets = preset.applying(to: targets)
+        mode = .standard
+        curve = preset.curve
+        minimumLevel = .kill
+        isReversed = false
+        isTravelReversed = false
     }
 
     func loadScene(id: UUID) {

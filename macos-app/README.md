@@ -43,8 +43,31 @@ parameters, with independent ranges and directions for every mapping. See the
 - Manual GitHub release checking with no background checks, automatic download,
   or automatic installation
 
+Update checks require a published macOS installer and matching
+checksum, skipping incomplete or withdrawn downloads. Stable releases are the
+default; **Include testing prereleases** enables explicit preview discovery.
+These update-check improvements are included from 0.3.1.
+
 Quick actions add targets without changing existing mappings. Saved presets are
 separate, complete snapshots of targets and crossfade settings.
+
+### Built-in Presets
+
+Version 0.3.1 restores two built-in choices alongside the quick actions:
+
+- **Performance A/B:** active Level targets follow their A/B sides, using
+  A to B mode, Full Centre and Kill. Parameter behaviours remain unchanged.
+- **Scene Morph:** every active target uses Range between its existing Left
+  and Right values, with Smooth as the global shape.
+
+Both operate on existing targets, require paused output and ask for confirmation.
+**Save Current & Apply** saves a complete snapshot first, when a user-preset slot
+is available. **Apply** changes behaviour without creating a snapshot.
+Neither changes MIDI CC assignments, target names, endpoints, custom shapes,
+Return Values or Off targets. Both reset A/B mode, floor and direction switches;
+Range targets using Global shape follow the new curve. No targets are added or
+removed, and no saved presets are overwritten. A/B and Range can still be mixed
+afterwards. Map the resulting MIDI outputs to the desired host parameters.
 
 ## Target Types
 

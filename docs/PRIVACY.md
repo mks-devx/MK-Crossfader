@@ -13,11 +13,16 @@ the app's bundle identifier. Nothing is uploaded.
 The app does not record or transmit audio.
 
 The app accesses the network only when the user selects **Check for Updates**.
-That action sends an HTTPS request to GitHub's public Releases API containing a
+That action sends HTTPS requests to GitHub's public Releases API containing a
 standard app name and version user-agent. It does not send MIDI data, audio,
 settings, target names, controller details, or a persistent identifier. GitHub
 receives normal connection metadata such as the user's IP address. The app does
 not check in the background or automatically download or install anything.
+
+From 0.3.1, the updater reads up to ten release-list pages per manual check.
+It checks installer and checksum attachment metadata without downloading those
+files. Including testing prereleases is optional and does not enable background
+checks or transmit extra personal information.
 
 If **Launch at Login** is enabled, the app registers itself with macOS through
 `SMAppService`. It does not install a helper process, background daemon, or

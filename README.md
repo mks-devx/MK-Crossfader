@@ -22,11 +22,11 @@
 ---
 
 > [!IMPORTANT]
-> **0.3.0 is a testing preview, not a stable release.** Check
-> [Releases](https://github.com/mks-devx/MK-Crossfader/releases) for installer
-> availability. The macOS candidate is signed and notarised, but a
-> browser-download installation on a clean Mac and a full physical-controller
-> rehearsal are still outstanding. Test a disposable project before live use.
+> **Download MK Crossfader 0.3.1 for macOS** from
+> [Releases](https://github.com/mks-devx/MK-Crossfader/releases/tag/v0.3.1).
+> The combined installer is Developer ID signed, Apple-notarised and stapled.
+> Windows remains source-only. Rehearse your own project and controller before
+> relying on the tools in a live performance.
 
 MK Crossfader began as a focused way to perform transitions from Maschine+
 hardware while running Maschine 3 on a Mac. A single physical fader or knob can
@@ -85,6 +85,12 @@ does not inspect the Set or read parameter values back from Live.
 *0.3.0 interface preview, paused for setup. The example combines A/B level
 targets with a filter Range target; one MIDI control can drive all three.*
 
+Version 0.3.1 also includes **Performance A/B** and **Scene Morph** built-in
+presets. They configure existing targets without changing MIDI assignments,
+names, endpoints or Return Values. Applying a preset requires paused output and
+confirmation; **Save Current & Apply** keeps a snapshot first. A/B and Range can
+still be combined freely. See the [preset details](macos-app/README.md#built-in-presets).
+
 ## Audio Crossfader VST3
 
 One Controller publishes the crossfader state. Target instances receive that
@@ -121,8 +127,8 @@ or parameters in other plug-ins, use the MIDI Control App.
 ## Download And Install
 
 Use the **[Releases page](https://github.com/mks-devx/MK-Crossfader/releases)**
-for the 0.3.0 testing preview and its current download status. When attached,
-download `MK-Crossfader-0.3.0.pkg` and its matching `.pkg.sha256` file. The
+for the latest macOS release. Download `MK-Crossfader-0.3.1.pkg` and its
+matching `.pkg.sha256` file. The
 combined installer requires macOS 14 or later and includes Apple Silicon and
 Intel builds. It is Developer ID signed, Apple-notarised and stapled.
 
@@ -248,6 +254,11 @@ Support is provided on a best-effort basis. Check the
 [Releases page](https://github.com/mks-devx/MK-Crossfader/releases) or use the
 macOS app's manual **Check for Updates** command. The app never checks,
 downloads, or installs updates in the background, and the VST3 remains offline.
+
+From 0.3.1, update checks require a matching macOS installer
+and checksum. Stable releases are the default; **Include testing prereleases**
+explicitly includes previews and labels them as such. Users of 0.3.0 or earlier
+can download 0.3.1 directly from Releases if the older checker misses it.
 
 ## Project
 

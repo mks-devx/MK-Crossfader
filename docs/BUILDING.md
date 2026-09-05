@@ -67,7 +67,7 @@ To validate uncommitted local changes without signing or notarisation:
 ```
 
 This explicit mode refuses Developer ID identities and notarisation credentials.
-It creates `dist/MK-Crossfader-0.3.0-local-test.pkg`. Normal release builds require
+It creates `dist/MK-Crossfader-0.3.1-local-test.pkg`. Normal release builds require
 a clean checkout, both Developer ID identities, and a notarisation profile;
 missing configuration stops the build instead of producing a partial release.
 Source privacy preflight
@@ -82,6 +82,7 @@ bash scripts/tests/privacy-preflight.sh
 ruby scripts/tests/ci-policy.rb
 python3 scripts/tests/installer-preflight.py
 python3 scripts/tests/installer-container.py
+python3 scripts/tests/third-party-notices.py
 ```
 
 A distributable build requires both signing identities and notarisation:

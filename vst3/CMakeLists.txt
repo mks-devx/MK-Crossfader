@@ -9,7 +9,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
         "Oldest supported macOS version")
 endif()
 
-project(MK_Crossfader VERSION 0.3.0 LANGUAGES C CXX)
+project(MK_Crossfader VERSION 0.3.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

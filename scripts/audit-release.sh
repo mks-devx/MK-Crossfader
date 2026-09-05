@@ -133,7 +133,7 @@ if rg -n "$NETWORK_SOURCE_PATTERN" "$ROOT/macos-app/Sources" \
     exit 1
 fi
 UPDATE_CHECKER="$ROOT/macos-app/Sources/MKMIDICrossfader/AppUpdateChecker.swift"
-EXPECTED_APP_NETWORK_URLS=$'https://api.github.com/repos/mks-devx/MK-Crossfader/releases/latest\nhttps://github.com/mks-devx/MK-Crossfader/releases'
+EXPECTED_APP_NETWORK_URLS=$'https://api.github.com/repos/mks-devx/MK-Crossfader/releases\nhttps://github.com/mks-devx/MK-Crossfader/releases'
 ACTUAL_APP_NETWORK_URLS="$(rg -o 'https?://[^\"]+' "$UPDATE_CHECKER" \
     | LC_ALL=C sort -u)"
 if [[ "$ACTUAL_APP_NETWORK_URLS" != "$EXPECTED_APP_NETWORK_URLS" ]]; then

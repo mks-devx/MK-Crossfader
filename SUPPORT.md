@@ -31,9 +31,14 @@ Security vulnerabilities must not be reported publicly. Follow
 ## Updates
 
 The GitHub repository is the only official source for project news, source
-updates, documentation, and releases. The macOS app can manually check the
-latest GitHub Release, but it does not check in the background or automatically
+updates, documentation, and releases. The macOS app can manually check for
+updates, but it does not check in the background or automatically
 download or install anything. The VST3 does not access the network.
+
+From 0.3.1, the updater skips releases without a matching macOS installer and
+checksum. Stable releases are checked by default; enable **Include testing
+prereleases** to include previews. Versions 0.3.0 and earlier use the older
+checker: use the Releases page directly if a download is not offered.
 
 Use GitHub's **Watch** menu to follow repository activity or release
 notifications. Signed and notarised installers are published only through the

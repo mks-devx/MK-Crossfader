@@ -77,6 +77,7 @@ struct SettingsView: View {
     @State private var showsSavePresetAlert = false
     @State private var presetName = ""
     @State private var presetPendingDeletion: UUID?
+    @State private var builtInPresetPendingApplication: BuiltInCrossfadePreset?
     @State private var showsUpdateResult = false
 
     var body: some View {
@@ -253,6 +254,39 @@ struct SettingsView: View {
         } message: {
             Text("The saved preset will be removed permanently.")
         }
+        .confirmationDialog(
+            "Apply Built-in Preset?",
+            isPresented: Binding(
+                get: { builtInPresetPendingApplication != nil },
+                set: {
+                    if !$0 { builtInPresetPendingApplication = nil }
+                }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let preset = builtInPresetPendingApplication {
+                Button("Save Current & Apply \(preset.displayName)") {
+                    guard model.canApplyBuiltInPreset, model.canSaveScene else { return }
+                    model.saveScene(name: "Before \(preset.displayName)")
+                    model.applyBuiltInPreset(preset)
+                    builtInPresetPendingApplication = nil
+                }
+                .disabled(!model.canApplyBuiltInPreset || !model.canSaveScene)
+
+                Button("Apply \(preset.displayName)") {
+                    model.applyBuiltInPreset(preset)
+                    builtInPresetPendingApplication = nil
+                }
+                .disabled(!model.canApplyBuiltInPreset)
+            }
+            Button("Cancel", role: .cancel) {
+                builtInPresetPendingApplication = nil
+            }
+        } message: {
+            if let preset = builtInPresetPendingApplication {
+                Text("\(preset.summary)\n\nMIDI assignments, names, endpoints, custom shapes and Return Values are kept. Global shapes follow the preset curve. A/B mode and both direction switches reset. Off targets and saved presets stay unchanged.")
+            }
+        }
         .alert(updateResultTitle, isPresented: $showsUpdateResult) {
             Button(
                 updateChecker.state.releaseURL == nil
@@ -271,42 +305,51 @@ struct SettingsView: View {
     }
 
     private var updateStatus: some View {
-        HStack(spacing: 10) {
-            Label(
-                updateChecker.state.statusText,
-                systemImage: updateChecker.state.systemImage
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
-            Spacer()
-
-            if let releaseURL = updateChecker.state.releaseURL {
-                Link("View Release", destination: releaseURL)
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle("Include testing prereleases", isOn: $updateChecker.includeTestingPrereleases)
+                .toggleStyle(.checkbox)
+                .font(.caption)
+                .disabled(updateChecker.state.isChecking)
+                .help("Also look for experimental installers that are not stable releases")
+            HStack(spacing: 10) {
+                Label(
+                    updateChecker.state.statusText,
+                    systemImage: updateChecker.state.systemImage
+                )
                     .font(.caption)
-            }
+                    .foregroundStyle(.secondary)
 
-            Button {
-                Task {
-                    await updateChecker.checkForUpdates()
+                Spacer()
+
+                if let releaseURL = updateChecker.state.releaseURL {
+                    Link("View Release", destination: releaseURL)
+                        .font(.caption)
                 }
-            } label: {
-                Label("Check for Updates", systemImage: "arrow.triangle.2.circlepath")
+
+                Button {
+                    Task {
+                        await updateChecker.checkForUpdates()
+                    }
+                } label: {
+                    Label("Check for Updates", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .controlSize(.small)
+                .disabled(updateChecker.state.isChecking)
+                .help("Check the official GitHub Releases page")
             }
-            .controlSize(.small)
-            .disabled(updateChecker.state.isChecking)
-            .help("Check the official GitHub Releases page")
         }
     }
 
     private var updateResultTitle: String {
         switch updateChecker.state {
         case .upToDate:
-            return "MK Crossfader Is Up to Date"
+            return "No Newer Installer"
         case .updateAvailable:
             return "MK Crossfader Update Available"
+        case .previewAvailable:
+            return "Testing Prerelease Available"
         case .noPublishedRelease:
-            return "No Public Release Yet"
+            return "No Matching Installer"
         case .failed:
             return "Update Check Failed"
         case .idle, .checking:
@@ -317,13 +360,15 @@ struct SettingsView: View {
     private var updateResultMessage: String {
         switch updateChecker.state {
         case .upToDate(let current):
-            return "You are using the latest public version, \(current)."
+            return "No newer installer matches your update selection. You are using version \(current)."
         case .updateAvailable(let current, let latest, _):
             return "Version \(latest) is available. You are using \(current)."
+        case .previewAvailable(let current, let latest, _):
+            return "Testing prerelease \(latest) is available. It is not a stable release. Review its known limitations before installing. You are using \(current)."
         case .noPublishedRelease(let current):
-            return "No public GitHub Release has been published yet. You are using version \(current)."
+            return "No macOS installer and checksum are available for your update selection. You are using version \(current)."
         case .failed:
-            return "The app could not reach GitHub. Check your internet connection and try again."
+            return "The update check could not be completed. Try again later or check the official Releases page."
         case .idle, .checking:
             return updateChecker.state.statusText
         }
@@ -560,6 +605,25 @@ struct SettingsView: View {
 
     private var crossfadeSettings: some View {
         VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Menu {
+                    ForEach(BuiltInCrossfadePreset.allCases) { preset in
+                        Button(preset.displayName) {
+                            builtInPresetPendingApplication = preset
+                        }
+                        .help(preset.summary)
+                    }
+                } label: {
+                    Label("Built-in Presets", systemImage: "slider.horizontal.3")
+                }
+                .fixedSize()
+                .disabled(!model.canApplyBuiltInPreset)
+                .help(model.isEnabled
+                    ? "Pause before applying a built-in preset"
+                    : "Apply a starting behaviour to existing active targets")
+                Spacer(minLength: 0)
+            }
+
             presetSettings
 
             if model.hasCrossfadeTargets {

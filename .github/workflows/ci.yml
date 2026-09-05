@@ -42,6 +42,8 @@ jobs:
         run: python3 scripts/tests/installer-preflight.py
       - name: Test installer container privacy
         run: python3 scripts/tests/installer-container.py
+      - name: Test bundled third-party notices
+        run: python3 scripts/tests/third-party-notices.py
       - name: Check CI publication policy
         run: ruby scripts/tests/ci-policy.rb
       - name: Build app bundle
