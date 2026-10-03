@@ -2,7 +2,7 @@
 
 XYZ lets one touch control separate parameters through X, Y and Z. Each input is
 an absolute 7-bit MIDI CC on one selected controller source. This is a generic
-CC mapping workflow; ZONA hardware, factory profiles and actual device message
+CC mapping workflow; controller hardware, factory profiles and actual device message
 ordering have not been verified. No factory CC assignments are assumed.
 
 ## Set up inputs
