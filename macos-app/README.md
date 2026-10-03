@@ -108,6 +108,8 @@ signed and Apple-notarised package from the repository's Releases page.
 For an isolated build after moving a checkout, set `APP_SCRATCH_DIR` to a fresh
 absolute cache directory and `APP_BUILD_DIR` to a fresh absolute output directory.
 The build script replaces the app and zip at its output location.
+The combined `scripts/verify-all.sh` check also uses `APP_SCRATCH_DIR` for Swift
+tests, so a moved checkout can avoid caches from its previous location.
 
 The checked-in icon is used by normal builds. Maintainers can regenerate it
 with `./macos-app/scripts/build-icon.sh` using standard macOS tools.

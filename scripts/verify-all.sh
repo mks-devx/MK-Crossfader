@@ -5,7 +5,8 @@ set -euo pipefail
 ROOT="${0:A:h:h}"
 
 print "== MK MIDI Crossfader =="
-swift test --package-path "$ROOT/macos-app"
+swift test --package-path "$ROOT/macos-app" \
+    --scratch-path "${APP_SCRATCH_DIR:-$ROOT/macos-app/.build}"
 "$ROOT/macos-app/scripts/build-app.sh"
 
 print "== MK Crossfader VST3 =="
