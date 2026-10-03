@@ -145,11 +145,17 @@ or parameters in other plug-ins, use the MIDI Control App.
 
 ## Download And Install
 
-Use the **[Releases page](https://github.com/mks-devx/MK-Crossfader/releases)**
-for the latest macOS release. Download `MK-Crossfader-0.3.1.pkg` and its
-matching `.pkg.sha256` file. The combined installer requires macOS 14 or later
-and includes Apple Silicon and Intel builds. It is Developer ID signed,
-Apple-notarised and stapled.
+Choose the macOS release for your workflow:
+
+- **[Stable 0.3.1](https://github.com/mks-devx/MK-Crossfader/releases/tag/v0.3.1)**:
+  download `MK-Crossfader-0.3.1.pkg` for established workflows.
+- **[XYZ Preview 0.4.0](https://github.com/mks-devx/MK-Crossfader/releases/tag/v0.4.0)**:
+  download `MK-Crossfader-0.4.0.pkg` to test the new MIDI inputs; read its
+  validation limits before use.
+
+Download the matching `.pkg.sha256` file with either installer. Both combined
+installers require macOS 14 or later, include Apple Silicon and Intel builds,
+and are Developer ID signed, Apple-notarised and stapled.
 
 The 0.2.8 and 0.2.9 installer attachments remain withdrawn. Their release pages
 are historical version records, not recommended downloads.
@@ -160,7 +166,7 @@ code, not installable applications or plug-ins. Developers can use the
 releases. There is no Windows download at present.
 
 The experimental Windows x64 VST3 passed the automated build and tests for
-0.3.1, but has not been verified in a Windows DAW or on a physical Windows
+0.4.0, but has not been verified in a Windows DAW or on a physical Windows
 system. It remains **source-only**, with no Windows installer or preview archive
 published. The MIDI Control App remains macOS-only. See the
 [Windows preview guide](docs/WINDOWS_PREVIEW.md) for build instructions and the
@@ -172,7 +178,8 @@ The macOS package layout is:
 - **MK Crossfader VST3** in `/Library/Audio/Plug-Ins/VST3`
 - the setup manual in `/Library/Application Support/MK Crossfader`
 
-Close Maschine 3, Ableton Live, and other plug-in hosts before installation.
+If the MIDI app is running, use **Return & Pause**, then quit it. Close
+Maschine 3, Ableton Live, and other plug-in hosts before installation.
 Follow the [installation guide](docs/INSTALLATION.md) for the complete process.
 
 ## Quick Start
@@ -191,13 +198,21 @@ path that should join the crossfade.
 
 ### MIDI Multi-Mapping
 
-1. Open MK MIDI Crossfader and select the physical MIDI controller.
-2. Press **MIDI Learn** in the app and move the fader or knob to assign its input.
+These steps use one input. For independent axes in 0.4.0, follow
+[XYZ setup](docs/XYZ_SETUP.md).
+
+1. Open MK MIDI Crossfader, leave output paused and select the physical MIDI
+   controller. In 0.4.0, choose **Single** input mode.
+2. Press **MIDI Learn** and move only the intended fader or knob. In 0.4.0,
+   check the detected channel/CC, press **Use for X**, then move the control
+   again to supply a fresh value. In stable 0.3.1, learning saves the first
+   received CC automatically; there is no confirmation button.
 3. Enable the virtual **MK Crossfader** port for MIDI mapping in the destination.
 4. Add a **Parameter** target and activate MIDI Learn on the destination control.
 5. Press **Send Learn**, then repeat for the remaining parameters.
 6. Assign each target to A, B, Range, or Off and configure its movement.
-7. Enable **Active** and test the full control range before using it in a performance.
+7. Move the control once more after setup, enable **Active**, and test the full
+   control range before using it in a performance.
 
 In Ableton Live, enable **Remote** for the **MK Crossfader** input under
 **Settings > Link, Tempo & MIDI**. The app does not require Max for Live.

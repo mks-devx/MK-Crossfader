@@ -89,8 +89,9 @@ Type, Input and Follow are independent. In XYZ, Input selects X, Y or Z; in
 Single, every target uses X while stored Y/Z assignments are retained.
 
 Each target can be assigned to A, B, Range, or Off. A and B follow the global
-mode and curve. Range uses its own endpoints, shape, and Return Value. Endpoint labels follow
-the input axis: Left/Right, Bottom/Top or Minimum/Maximum. This is a configured MIDI value, not a value read back from the target.
+mode and curve. Range uses its own endpoints, shape, and Return Value. Endpoint
+labels follow the input axis: Left/Right, Bottom/Top or Minimum/Maximum.
+Return Value is a configured MIDI value, not a value read back from the target.
 
 ## Build
 

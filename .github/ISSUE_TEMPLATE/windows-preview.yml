@@ -5,7 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for testing the experimental Windows VST3. Reports from both successful and failed tests help establish real host compatibility.
+        The experimental Windows VST3 is source-only; no Windows installer or preview archive is published.
+        Use the [Windows build guide](https://github.com/mks-devx/MK-Crossfader/blob/main/docs/WINDOWS_PREVIEW.md) and report the exact version and source commit tested.
+        Reports from both successful and failed tests help establish real host compatibility.
 
   - type: dropdown
     id: result
@@ -21,8 +23,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: MK Crossfader version
-      placeholder: 0.3.0
+      label: MK Crossfader version and source commit
+      placeholder: "0.4.0, source commit from git rev-parse HEAD"
     validations:
       required: true
 
@@ -77,7 +79,7 @@ body:
     attributes:
       label: Checks
       options:
-        - label: I tested the latest available Windows preview.
+        - label: I built the Windows VST3 from source and identified the version and commit above.
           required: true
         - label: I used one Controller and unique Target Slots in the same Session.
           required: true

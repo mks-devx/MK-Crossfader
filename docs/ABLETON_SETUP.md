@@ -1,8 +1,9 @@
 # Ableton Live Setup
 
 Although MK Crossfader was created around a Maschine live performance setup,
-both products have also been manually verified in Ableton Live. They provide
-two independent workflows:
+both products' established workflows have also been manually verified in Ableton
+Live. The new 0.4.0 XYZ workflow still needs a physical-controller/DAW rehearsal.
+The products provide two independent workflows:
 
 - **MK MIDI Crossfader** turns one physical MIDI fader or knob into a
   coordinated multi-parameter control.
@@ -20,10 +21,18 @@ Max for Live or the MK Crossfader VST3.
 
 ### Configure Ableton Live
 
-1. Open MK MIDI Crossfader and select the physical MIDI controller.
-2. In Ableton Live, open **Settings > Link, Tempo & MIDI**.
-3. Find the input port named **MK Crossfader** and enable **Remote**.
-4. Leave the app paused while creating or changing mappings.
+1. Open MK MIDI Crossfader, leave output paused and select the physical MIDI
+   controller. In 0.4.0, choose **Single** input mode for this workflow.
+2. Press **MIDI Learn** and move only the intended fader or knob. In 0.4.0,
+   check the detected channel/CC, press **Use for X**, then move the control
+   again. Stable 0.3.1 saves the first received CC automatically and has no
+   confirmation button.
+3. In Ableton Live, open **Settings > Link, Tempo & MIDI**.
+4. Find the input port named **MK Crossfader** and enable **Remote**.
+5. Leave the app paused while creating or changing mappings.
+
+For independent X/Y/Z inputs in 0.4.0, use the [XYZ setup guide](XYZ_SETUP.md)
+for input binding and fresh-value requirements, then map the targets in Live.
 
 ### Create A Mapping
 

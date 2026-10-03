@@ -51,13 +51,22 @@ session reports `CONTROLLER CONFLICT`; duplicate Target slots report
 
 1. Start MK MIDI Crossfader before Maschine 3.
 2. Enable `MK Crossfader` under Maschine 3 Preferences > MIDI > Input.
-3. Select the physical controller and incoming CC in the app.
+3. Leave output paused and select the physical controller in the app. In
+   0.4.0, choose **Single** for one input. Press **MIDI Learn** and move only
+   the intended control. Check the detected channel/CC, press **Use for X**,
+   then move it again. Stable 0.3.1 saves the first received CC automatically
+   and has no confirmation button.
 4. Add and name a target.
 5. Put the matching Group, Sound, filter, send, or other parameter into
    Maschine 3 MIDI Learn.
 6. Press `Send Learn`, then assign the target to A, B, Range, or Off.
 7. Repeat only for the controls needed by the performance and save the
    assignments in a dedicated Maschine template.
+8. Move the control once more after setup, enable **Active**, and test the full
+   travel and Return Values before performance use.
+
+For independent inputs in 0.4.0, follow [XYZ setup](XYZ_SETUP.md) before mapping
+its targets in Maschine. Physical XYZ controller/DAW rehearsal remains outstanding.
 
 Use `Return & Pause` before changing locked routing or closing the app. A
 target's Return Value is configured explicitly; it is not read back from

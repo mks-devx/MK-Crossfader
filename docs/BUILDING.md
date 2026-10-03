@@ -56,8 +56,8 @@ maintainer action:
 ## Combined Installer
 
 The package contains the app, VST3, licence,
-third-party notices, a setup index, and the installation, Maschine and Ableton
-guides. The build performs a release privacy audit and writes a SHA-256 checksum
+third-party notices, a setup index, and the installation, Maschine, Ableton and
+XYZ guides. The build performs a release privacy audit and writes a SHA-256 checksum
 next to the package.
 
 To validate uncommitted local changes without signing or notarisation:

@@ -23,3 +23,32 @@ compile_commands.json
 AGENTS.local.md
 /branding/
 /social/
+
+# Local project records must remain outside the public source tree.
+[Pp]rivate/
+[Mm]arketing/
+[Bb]uilds/
+[Aa]udits/
+[Ww]orktrees/
+CURRENT-STATE.md
+
+# Credentials and signing material are supplied locally, never committed.
+.env
+.env.*
+.aws/
+.ssh/
+credentials
+credentials.*
+secrets
+secrets.*
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
