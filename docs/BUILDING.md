@@ -67,7 +67,7 @@ To validate uncommitted local changes without signing or notarisation:
 ```
 
 This explicit mode refuses Developer ID identities and notarisation credentials.
-It creates `dist/MK-Crossfader-0.3.1-local-test.pkg`. Normal release builds require
+It creates `dist/MK-Crossfader-0.4.0-local-test.pkg`. Normal release builds require
 a clean checkout, both Developer ID identities, and a notarisation profile;
 missing configuration stops the build instead of producing a partial release.
 Source privacy preflight

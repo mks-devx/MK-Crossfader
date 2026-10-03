@@ -21,7 +21,7 @@ struct MenuBarContent: View {
         Toggle(isOn: $model.isEnabled) {
             Label("Active", systemImage: "arrow.left.arrow.right")
         }
-            .disabled(!model.canActivate)
+            .disabled(!model.canToggleOutput)
 
         Button {
             NSApplication.shared.activate(ignoringOtherApps: true)
@@ -66,12 +66,13 @@ struct MenuBarContent: View {
     }
 }
 
+@MainActor
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var updateChecker: AppUpdateChecker
     @AppStorage(AppActivationPolicy.showDockIconDefaultsKey)
     private var showDockIcon = true
-    @StateObject private var launchAtLogin = LaunchAtLoginController()
+    @StateObject private var launchAtLogin: LaunchAtLoginController
     @State private var showsAdvanced = false
     @State private var selectedPresetID: UUID?
     @State private var showsSavePresetAlert = false
@@ -79,6 +80,13 @@ struct SettingsView: View {
     @State private var presetPendingDeletion: UUID?
     @State private var builtInPresetPendingApplication: BuiltInCrossfadePreset?
     @State private var showsUpdateResult = false
+
+    init(model: AppModel, updateChecker: AppUpdateChecker,
+         launchAtLogin: LaunchAtLoginController? = nil) {
+        self.model = model
+        self.updateChecker = updateChecker
+        _launchAtLogin = StateObject(wrappedValue: launchAtLogin ?? LaunchAtLoginController())
+    }
 
     var body: some View {
         ScrollView {
@@ -105,6 +113,8 @@ struct SettingsView: View {
 
                 DisclosureGroup(isExpanded: $showsAdvanced) {
                     VStack(alignment: .leading, spacing: 14) {
+                        TouchGateEditor(model: model)
+                        Divider()
                         HStack(spacing: 24) {
                             Stepper(
                                 "Output channel · \(model.outputChannel + 1)",
@@ -410,7 +420,7 @@ struct SettingsView: View {
 
             Toggle("Active", isOn: $model.isEnabled)
                 .toggleStyle(.switch)
-                .disabled(!model.canActivate)
+                .disabled(!model.canToggleOutput)
         }
     }
 
@@ -475,71 +485,7 @@ struct SettingsView: View {
     }
 
     private var controllerSettings: some View {
-        HStack(alignment: .bottom, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("MIDI controller")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 6) {
-                    Picker("MIDI controller", selection: $model.selectedSourceID) {
-                        Text("No Controller").tag(MIDIUniqueID(0))
-                        ForEach(model.sources) { source in
-                            Text(source.name).tag(source.id)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(maxWidth: .infinity)
-                    .disabled(model.isEnabled)
-
-                    Button {
-                        model.refreshSources()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.borderless)
-                    .help("Refresh MIDI controllers")
-                    .accessibilityLabel("Refresh MIDI controllers")
-                }
-            }
-            .frame(width: 340, alignment: .leading)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Crossfader input")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(model.learnedControlDescription)
-                    .font(.system(.body, design: .monospaced))
-                    .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
-            }
-            .frame(width: 145, alignment: .leading)
-
-            Spacer(minLength: 0)
-
-            Button {
-                if model.isLearning {
-                    model.cancelLearning()
-                } else {
-                    model.beginLearning()
-                }
-            } label: {
-                Label(
-                    model.isLearning ? "Cancel" : "MIDI Learn",
-                    systemImage: model.isLearning
-                        ? "xmark.circle"
-                        : "dot.radiowaves.left.and.right"
-                )
-            }
-            .buttonStyle(LearnActionButtonStyle(primary: true))
-            .disabled(model.isEnabled || !model.isConnected)
-            .help(
-                model.isEnabled
-                    ? "Pause before learning the crossfader input"
-                    : model.isConnected
-                        ? "Move the physical fader or knob to learn its MIDI CC"
-                        : "Connect and select a MIDI controller first"
-            )
-        }
+        InputConfigurationView(model: model)
     }
 
     private var targetSettings: some View {
@@ -676,13 +622,13 @@ struct SettingsView: View {
 
                 HStack(spacing: 24) {
                     LevelMeter(
-                        label: "A",
+                        label: model.inputConfiguration.mode == .xyz ? "X · A" : "A",
                         value: model.lastOutput.groupA,
                         maximum: 95,
                         tint: sideAColor
                     )
                     LevelMeter(
-                        label: "B",
+                        label: model.inputConfiguration.mode == .xyz ? "X · B" : "B",
                         value: model.lastOutput.groupB,
                         maximum: 95,
                         tint: sideBColor
@@ -803,6 +749,7 @@ private struct TargetRow: View {
                         draftName = name
                     }
                     .help("Click and type to replace the target name")
+                    Text("Type").font(.caption).foregroundStyle(.secondary)
                     Picker("Target type", selection: kindBinding) {
                         ForEach(selectableTargetKinds, id: \.self) { kind in
                             Text(kind.displayName).tag(kind)
@@ -821,20 +768,28 @@ private struct TargetRow: View {
                 }
                 .frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
 
-                Picker("Behaviour", selection: behaviorBinding) {
-                    ForEach(CrossfadeTargetBehavior.allCases, id: \.self) { behavior in
-                        Text(behavior.displayName).tag(behavior)
+                if model.inputConfiguration.mode == .xyz {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Input").font(.caption).foregroundStyle(.secondary)
+                        Picker("Input for \(target.displayName)", selection: Binding(
+                            get: { target.inputAxis },
+                            set: { model.updateTargetInputAxis(id: target.id, axis: $0) }
+                        )) {
+                            ForEach(InputAxis.allCases, id: \.self) { axis in Text(axis.label).tag(axis) }
+                        }.labelsHidden().frame(width: 70).disabled(model.isEnabled)
                     }
                 }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(width: 220)
-                .disabled(model.isEnabled)
-                .help(
-                    model.isEnabled
-                        ? "Pause before changing target routing"
-                        : "Follow side A, side B, a custom range, or stay off"
-                )
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Follow").font(.caption).foregroundStyle(.secondary)
+                    Picker("Follow for \(target.displayName)", selection: behaviorBinding) {
+                        ForEach(CrossfadeTargetBehavior.allCases, id: \.self) { behavior in
+                            Text(behavior.displayName).tag(behavior)
+                        }
+                    }
+                    .labelsHidden().pickerStyle(.segmented).frame(width: 220)
+                    .disabled(model.isEnabled)
+                    .help("Follow side A, side B, a custom range, or stay off")
+                }
 
                 Button(role: .destructive) {
                     model.removeTarget(id: target.id)
@@ -880,14 +835,36 @@ private struct TargetRow: View {
                 Spacer()
             }
 
+            if model.inputConfiguration.mode == .xyz,
+               model.inputConfiguration.touchGate != nil || target.releasePolicy == .returnValue {
+                HStack {
+                    Picker("On release", selection: Binding(
+                        get: { target.releasePolicy },
+                        set: { model.updateTargetReleasePolicy(id: target.id, policy: $0) }
+                    )) {
+                        Text("Hold").tag(TouchReleasePolicy.hold)
+                        Text("Return Value").tag(TouchReleasePolicy.returnValue)
+                    }.frame(width: 245).disabled(model.isEnabled)
+                    if model.inputConfiguration.touchGate == nil {
+                        Text("Configure Touch Gate or choose Hold").font(.caption).foregroundStyle(.orange)
+                    }
+                    if !usesRangeControls && target.releasePolicy == .returnValue {
+                        Slider(value: restoreBinding, in: 0...100, step: 1)
+                            .accessibilityLabel("Return value for \(target.displayName)")
+                            .disabled(model.isEnabled)
+                            .help("Pause before changing the Return Value")
+                        Text("\(target.restorePercent)%").monospacedDigit()
+                    }
+                }
+            }
             if usesRangeControls {
                 HStack(spacing: 18) {
                     SceneEndpointControl(
-                        label: "Left",
+                        label: model.effectiveAxis(for: target).minimumLabel,
                         value: sceneLeftBinding
                     )
                     SceneEndpointControl(
-                        label: "Right",
+                        label: model.effectiveAxis(for: target).maximumLabel,
                         value: sceneRightBinding
                     )
                 }
@@ -903,7 +880,7 @@ private struct TargetRow: View {
                         .pickerStyle(.menu)
                         .frame(width: 150)
                         .help(
-                            "Shape used while moving from the Left value to the Right value"
+                            "Shape used between this input’s minimum and maximum endpoint values"
                         )
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1149,7 +1126,8 @@ private struct SceneEndpointControl: View {
         HStack(spacing: 8) {
             Text(label)
                 .font(.caption.weight(.semibold))
-                .frame(width: 36, alignment: .leading)
+                .lineLimit(1)
+                .frame(width: 64, alignment: .leading)
             Slider(value: $value, in: 0...100, step: 1)
                 .accessibilityLabel("\(label) value")
             Text("\(Int(value.rounded()))%")

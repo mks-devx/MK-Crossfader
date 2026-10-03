@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-10-03 - 0.4.0 Preview
+
+Native XYZ input preview. Physical XYZ controller timing, complete DAW rehearsal
+and browser-download installation on a clean Mac remain unverified for this
+version. Windows remains source-only.
+
+### MK MIDI Crossfader
+
+- Add optional independent X/Y/Z absolute 7-bit CC inputs and per-target axes.
+- Confirm learned CC/channel candidates before saving, with manual binding entry
+  and duplicate-assignment checks. Existing single-input settings remain supported.
+- Add an optional dedicated Touch Gate with per-target Hold or Return Value.
+  Wait for fresh required axes after touch-on and ignore released reset packets.
+- Preserve target axes and release policies in presets while keeping controller
+  bindings local to the computer. Protect unreadable/newer input settings.
+- Restore clear Edit/MIDI Learn styling and initialise manual editors from the
+  saved binding. Keep Active available for pausing between touches.
+- Cancel stale input and mapping callbacks across configuration changes and keep
+  Send Learn restoration consistent when re-touching at the same coordinates.
+- Isolate test preferences in memory. Native release build number is 15.
+
+### VST3 and packaging
+
+- Align the VST3 version with the combined 0.4.0 installer; audio processing,
+  plug-in identifiers and saved-state format are unchanged from 0.3.1.
+- Include the XYZ setup guide in the offline installer documentation.
+- Retain signing, notarisation, privacy and version-alignment release gates.
+
 ## 2026-09-05 - 0.3.1
 
 macOS maintenance release. Windows support remains source-only, with no Windows

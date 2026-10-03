@@ -4,54 +4,6 @@ import ServiceManagement
 import Testing
 @testable import MKMIDICrossfader
 
-private final class RecordingMIDIEngine: MIDIEngineProtocol {
-    struct Message: Equatable {
-        let value: UInt8
-        let channel: UInt8
-        let controller: UInt8
-    }
-
-    var onControlChange: ((MIDIControlChange) -> Void)?
-    var onSetupChange: (() -> Void)?
-    var hasOutputEndpoint = true
-    var exposesSource = true
-    var sentMessages: [Message] = []
-
-    private let source = MIDISourceDescriptor(
-        id: 1,
-        endpoint: MIDIEndpointRef(1),
-        name: "Test Controller"
-    )
-
-    func availableSources() -> [MIDISourceDescriptor] {
-        exposesSource ? [source] : []
-    }
-
-    func connect(to source: MIDISourceDescriptor?) -> Bool {
-        source != nil
-    }
-
-    func sendControlChange(
-        value: UInt8,
-        channel: UInt8,
-        controller: UInt8
-    ) {
-        sentMessages.append(
-            Message(value: value, channel: channel, controller: controller)
-        )
-    }
-
-    func emit(channel: UInt8, controller: UInt8, value: UInt8) {
-        onControlChange?(
-            MIDIControlChange(
-                channel: channel,
-                controller: controller,
-                value: value
-            )
-        )
-    }
-}
-
 @MainActor
 private final class FakeLaunchAtLoginService: LaunchAtLoginServicing {
     var status: SMAppService.Status = .notRegistered
@@ -70,17 +22,6 @@ private final class FakeLaunchAtLoginService: LaunchAtLoginServicing {
 }
 
 @MainActor
-private func makeDefaults() -> UserDefaults {
-    let name = "MKMIDICrossfaderTests.\(UUID().uuidString)"
-    let defaults = UserDefaults(suiteName: name)!
-    defaults.removePersistentDomain(forName: name)
-    defaults.set(1, forKey: "selectedSourceID")
-    defaults.set(13, forKey: "inputChannel")
-    defaults.set(48, forKey: "inputController")
-    return defaults
-}
-
-@MainActor
 private func drainMainQueue() async {
     await withCheckedContinuation { continuation in
         DispatchQueue.main.async {
@@ -92,7 +33,7 @@ private func drainMainQueue() async {
 @Test("A missing controller selection falls back to the first available source")
 @MainActor
 func missingControllerSelectionUsesFirstSource() {
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     defaults.set(999, forKey: "selectedSourceID")
 
     let model = AppModel(
@@ -109,7 +50,7 @@ func missingControllerSelectionUsesFirstSource() {
 @MainActor
 func activationWaitsForInput() async {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
 
     #expect(model.isConnected)
     #expect(!model.hasReceivedInput)
@@ -135,7 +76,7 @@ func activationWaitsForInput() async {
 @Test("Dock icon is visible by default and the preference is respected")
 @MainActor
 func dockIconPreference() {
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
 
     #expect(AppActivationPolicy.shouldShowDockIcon(defaults: defaults))
     #expect(AppActivationPolicy.policy(showDockIcon: true) == .regular)
@@ -190,7 +131,7 @@ func launchAtLoginStatus() {
 @MainActor
 func rangeOutputAndReturnValue() async throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -242,7 +183,7 @@ func parameterReturnValueUsesFullMIDIRange() {
 @MainActor
 func removingTargetSendsReturnValue() throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -266,7 +207,7 @@ func removingTargetSendsReturnValue() throws {
 @MainActor
 func changingTargetCCReturnsOldMapping() throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -290,7 +231,7 @@ func changingTargetCCReturnsOldMapping() throws {
 @MainActor
 func changingTargetTypeUsesOldRange() throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Group",
         controller: 112,
@@ -313,7 +254,7 @@ func changingTargetTypeUsesOldRange() throws {
 @MainActor
 func changingOutputChannelReturnsOldChannel() throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -336,7 +277,7 @@ func changingOutputChannelReturnsOldChannel() throws {
 @MainActor
 func terminationReturnsActiveTargetsOnce() async throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -364,7 +305,7 @@ func terminationReturnsActiveTargetsOnce() async throws {
 @MainActor
 func controllerDisconnectReturnsActiveTargets() async throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -393,7 +334,7 @@ func controllerDisconnectReturnsActiveTargets() async throws {
 @MainActor
 func pausedPresetLoadingIsSilent() throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let preset = CrossfaderScenePreset(
         name: "Saved",
         targets: [
@@ -420,7 +361,7 @@ func pausedPresetLoadingIsSilent() throws {
 @MainActor
 func quickAddWorkflowsAreAdditive() throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let existing = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -451,7 +392,7 @@ func quickAddWorkflowsAreAdditive() throws {
 @MainActor
 func builtInPresetPersistence(preset: BuiltInCrossfadePreset) {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let model = AppModel(engine: engine, defaults: defaults)
     model.addParameterTarget()
     model.mode = .pairFade
@@ -497,7 +438,7 @@ func builtInPresetPersistence(preset: BuiltInCrossfadePreset) {
 @MainActor
 func builtInPresetActiveGuard(preset: BuiltInCrossfadePreset) async {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
     model.mode = .pairFade
     model.curve = .fastCut
     let original = model.targets
@@ -518,7 +459,7 @@ func builtInPresetActiveGuard(preset: BuiltInCrossfadePreset) async {
 @Test("Built-in presets reject empty or all-Off setups without consuming saved slots")
 @MainActor
 func builtInPresetAvailability() {
-    let model = AppModel(engine: RecordingMIDIEngine(), defaults: makeDefaults())
+    let model = AppModel(engine: RecordingMIDIEngine(), defaults: makeTestSettings())
     for index in 0..<16 { model.saveScene(name: "Saved \(index)") }
     let saved = model.scenes
     #expect(!model.canSaveScene)
@@ -543,7 +484,7 @@ func builtInPresetAvailability() {
 @MainActor
 func builtInPresetMIDIOutput(preset: BuiltInCrossfadePreset) async {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
     model.applyBuiltInPreset(preset)
     engine.emit(channel: 13, controller: 48, value: 0)
     await drainMainQueue()
@@ -574,7 +515,7 @@ func builtInPresetMIDIOutput(preset: BuiltInCrossfadePreset) async {
 @MainActor
 func sendLearnPulse() async throws {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
     let groupB = model.targets[1]
 
     model.sendMappingMessage(to: groupB.id)
@@ -607,7 +548,7 @@ func sendLearnPulse() async throws {
 @MainActor
 func sendLearnReturnSafety() async throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter",
         controller: 112,
@@ -651,7 +592,7 @@ func sendLearnReturnSafety() async throws {
 @MainActor
 func pendingLearnCancellation(action: String) async throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter", controller: 112, side: .b, kind: .customMIDI,
         transition: .range, restorePercent: 25
@@ -688,7 +629,7 @@ func pendingLearnCancellation(action: String) async throws {
 @MainActor
 func presetReplacementDuringLearn() async throws {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
     model.saveScene(name: "Before mapping")
     model.addParameterTarget()
     let target = model.targets.last!
@@ -705,7 +646,7 @@ func presetReplacementDuringLearn() async throws {
 @MainActor
 func repeatedSendLearn() async throws {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
     let id = model.targets[0].id
     model.sendMappingMessage(to: id)
     model.sendMappingMessage(to: id)
@@ -717,7 +658,7 @@ func repeatedSendLearn() async throws {
 @MainActor
 func offTargetLearnTermination() async throws {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
     let id = model.targets[0].id
     model.updateTargetBehavior(id: id, behavior: .off)
     model.sendMappingMessage(to: id)
@@ -732,7 +673,7 @@ func offTargetLearnTermination() async throws {
 @MainActor
 func shapeAndReturnAtMidpoint() async throws {
     let engine = RecordingMIDIEngine()
-    let defaults = makeDefaults()
+    let defaults = makeTestSettings()
     let target = CrossfadeTarget(
         name: "Filter", controller: 112, side: .b, kind: .customMIDI,
         transition: .range, customLeftPercent: 24, customRightPercent: 64,
@@ -756,7 +697,7 @@ func shapeAndReturnAtMidpoint() async throws {
 @MainActor
 func renameDuringLearn() async throws {
     let engine = RecordingMIDIEngine()
-    let model = AppModel(engine: engine, defaults: makeDefaults())
+    let model = AppModel(engine: engine, defaults: makeTestSettings())
     engine.emit(channel: 13, controller: 48, value: 0)
     await drainMainQueue()
     model.isEnabled = true

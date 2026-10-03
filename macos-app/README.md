@@ -2,9 +2,16 @@
 
 MK MIDI Crossfader is a native macOS app created for coordinated live
 transitions with Maschine 3 and Maschine+ hardware in Controller mode. Its
-persistent menu-bar control converts one physical MIDI CC into separate control
-values for parameters learned through the virtual `MK Crossfader` CoreMIDI
+persistent menu-bar control converts one physical MIDI CC, or independent X/Y/Z
+CC inputs, into separate control values for parameters learned through the virtual `MK Crossfader` CoreMIDI
 input.
+
+## 0.4.0 preview
+
+The native app adds optional XYZ input. The VST3 version is aligned with the
+combined 0.4.0 installer; its audio processing and saved-state format are
+unchanged from 0.3.1. XYZ hardware timing and the complete XYZ/DAW workflow
+remain unverified. See [XYZ setup](../docs/XYZ_SETUP.md) before testing.
 
 ## Compatibility
 
@@ -27,6 +34,9 @@ parameters, with independent ranges and directions for every mapping. See the
 
 ## Features
 
+- Single input or independent X/Y/Z absolute 7-bit CC inputs
+- Confirmed input learning and manual CC/channel entry
+- Optional dedicated Touch Gate with per-target Hold or Return Value on release
 - A/B crossfade, A+B to B, A+B to A, and paired fade modes
 - Full Centre, Linear, Smooth, Wide Blend, and Fast Cut curves
 - Kill, -24 dB, -18 dB, and -14 dB minimum levels
@@ -75,9 +85,12 @@ afterwards. Map the resulting MIDI outputs to the desired host parameters.
 `Parameter` targets can use the complete 0-127 range for filters, sends, and
 other learned controls.
 
+Type, Input and Follow are independent. In XYZ, Input selects X, Y or Z; in
+Single, every target uses X while stored Y/Z assignments are retained.
+
 Each target can be assigned to A, B, Range, or Off. A and B follow the global
-mode and curve. Range uses its own left value, right value, shape, and Return
-Value. This is a configured MIDI value, not a value read back from the target.
+mode and curve. Range uses its own endpoints, shape, and Return Value. Endpoint labels follow
+the input axis: Left/Right, Bottom/Top or Minimum/Maximum. This is a configured MIDI value, not a value read back from the target.
 
 ## Build
 
@@ -92,13 +105,18 @@ The app and zip archive are written to `macos-app/build/`. This source build is
 ad-hoc signed for local testing. For normal installation, use the Developer ID
 signed and Apple-notarised package from the repository's Releases page.
 
+For an isolated build after moving a checkout, set `APP_SCRATCH_DIR` to a fresh
+absolute cache directory and `APP_BUILD_DIR` to a fresh absolute output directory.
+The build script replaces the app and zip at its output location.
+
 The checked-in icon is used by normal builds. Maintainers can regenerate it
 with `./macos-app/scripts/build-icon.sh` using standard macOS tools.
 
 ## Safety
 
-The app starts paused and waits for the physical fader's first position before
-activation. Return actions are best-effort: a crash, forced termination, or
+The app starts paused and waits for fresh input on every axis used by active
+targets before activation. With Touch Gate enabled in XYZ, touch-on must arrive
+before fresh axis messages. The next touch waits for all required axes again. Return actions are best-effort: a crash, forced termination, or
 power loss cannot send a final MIDI message. Keep a neutral recovery control
 in the Maschine template and validate physical hot-plug behaviour before live
 use.

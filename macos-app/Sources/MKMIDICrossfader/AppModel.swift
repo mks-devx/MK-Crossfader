@@ -16,7 +16,8 @@ final class AppModel: ObservableObject {
         didSet {
             if selectedSourceID != oldValue {
                 cancelPendingMappings()
-                hasReceivedInput = false
+                cancelLearning()
+                resetInputState()
                 if isEnabled {
                     isEnabled = false
                 }
@@ -25,13 +26,18 @@ final class AppModel: ObservableObject {
             connectSelectedSource()
         }
     }
-    @Published var learnedChannel: Int {
-        didSet { defaults.set(learnedChannel, forKey: Keys.inputChannel) }
-    }
-    @Published var learnedController: Int {
-        didSet { defaults.set(learnedController, forKey: Keys.inputController) }
-    }
-    @Published var isLearning = false
+    @Published private(set) var inputConfiguration: InputConfiguration
+    @Published private(set) var inputState = CrossfaderInputState()
+    @Published private(set) var inputIssues: [String] = []
+    @Published private(set) var isLearning = false
+    @Published private(set) var learningAxis: InputAxis?
+    @Published private(set) var learningCandidate: MIDICCBinding?
+    @Published private(set) var learningCandidateValue: UInt8?
+    @Published private(set) var isLearningGate = false
+    private let inputEpoch = MIDIInputEpoch()
+    private var inputConfigurationWritable: Bool
+    var learnedChannel: Int { inputConfiguration.x?.channel ?? -1 }
+    var learnedController: Int { inputConfiguration.x?.controller ?? -1 }
     @Published var isEnabled: Bool {
         didSet {
             if isEnabled {
@@ -108,7 +114,7 @@ final class AppModel: ObservableObject {
     }
 
     private let engine: MIDIEngineProtocol
-    private let defaults: UserDefaults
+    private let defaults: any SettingsStore
     private var lastSentValues: [UUID: UInt8] = [:]
     private var terminationCancellable: AnyCancellable?
     private var didRestoreForTermination = false
@@ -132,31 +138,43 @@ final class AppModel: ObservableObject {
         return "CC \(learnedController) · Ch \(learnedChannel + 1)"
     }
 
+    var requiredInputAxes: Set<InputAxis> {
+        if inputConfiguration.mode == .single { return [.x] }
+        return Set(targets.filter(\.participatesInOutput).map(\.inputAxis))
+    }
+
+    func effectiveAxis(for target: CrossfadeTarget) -> InputAxis {
+        inputConfiguration.mode == .single ? .x : target.inputAxis
+    }
+
     var statusDescription: String {
-        if isLearning {
-            return "Move the crossfader"
-        }
-        if !engine.hasOutputEndpoint {
-            return "MIDI output unavailable"
-        }
-        if !isConnected {
-            return "Controller disconnected"
-        }
-        if learnedController < 0 || learnedChannel < 0 {
-            return "Input not learned"
-        }
-        if !hasReceivedInput {
-            return "Move crossfader once"
+        if isLearning { return learningCandidate == nil ? "Move the selected input" : "Confirm the learned input" }
+        if !inputConfigurationWritable { return inputIssues.first ?? "Reset input settings" }
+        if !engine.hasOutputEndpoint { return "MIDI output unavailable" }
+        if !isConnected { return "Controller disconnected" }
+        if hasMissingGatePolicy { return "Configure Touch Gate or choose Hold" }
+        if usesTouchGate, inputState.gateState != true { return "Touch the controller to continue" }
+        if requiredInputAxes.isEmpty { return "Add or enable a target" }
+        for axis in InputAxis.allCases where requiredInputAxes.contains(axis) {
+            if inputConfiguration.binding(for: axis) == nil { return "Learn input \(axis.label)" }
+            if !inputState.freshAxes.contains(axis) || (usesTouchGate && !inputState.receivedSinceTouch.contains(axis)) { return inputConfiguration.mode == .single ? "Move crossfader once" : "Move input \(axis.label) once" }
         }
         return isEnabled ? "Active" : "Paused"
     }
 
+    var usesTouchGate: Bool { inputConfiguration.mode == .xyz && inputConfiguration.touchGate != nil }
+    private var hasMissingGatePolicy: Bool {
+        inputConfiguration.mode == .xyz && inputConfiguration.touchGate == nil &&
+            targets.contains { $0.participatesInOutput && $0.releasePolicy == .returnValue }
+    }
+
+    var canToggleOutput: Bool { isEnabled || canActivate }
+
     var canActivate: Bool {
-        engine.hasOutputEndpoint
-            && isConnected
-            && learnedController >= 0
-            && learnedChannel >= 0
-            && hasReceivedInput
+        engine.hasOutputEndpoint && isConnected && !isLearning && inputConfigurationWritable
+            && requiredInputAxes.allSatisfy { inputConfiguration.binding(for: $0) != nil }
+            && !hasMissingGatePolicy
+            && inputState.canEmit(requiredAxes: requiredInputAxes, gateEnabled: usesTouchGate)
     }
 
     var canAddTarget: Bool {
@@ -185,32 +203,16 @@ final class AppModel: ObservableObject {
 
     init(
         engine: MIDIEngineProtocol = MIDIEngine(),
-        defaults: UserDefaults = .standard
+        defaults: any SettingsStore = UserDefaults.standard
     ) {
         self.engine = engine
         self.defaults = defaults
         selectedSourceID = MIDIUniqueID(defaults.integer(forKey: Keys.sourceID))
-        learnedChannel = min(
-            15,
-            max(
-                -1,
-                defaults.object(forKey: Keys.inputChannel) == nil
-                    ? -1
-                    : defaults.integer(forKey: Keys.inputChannel)
-            )
-        )
-        learnedController = min(
-            127,
-            max(
-                -1,
-                defaults.object(forKey: Keys.inputController) == nil
-                    ? -1
-                    : defaults.integer(forKey: Keys.inputController)
-            )
-        )
-        isEnabled = ProcessInfo.processInfo.environment[
-            "MK_CROSSFADER_AUTOMATION_START_ACTIVE"
-        ] == "1"
+        let inputLoad = InputConfigurationStore.load(from: defaults)
+        inputConfiguration = inputLoad.configuration
+        inputConfigurationWritable = inputLoad.isWritable
+        inputIssues = inputLoad.issues
+        isEnabled = false
         outputChannel = min(
             15,
             max(
@@ -265,8 +267,11 @@ final class AppModel: ObservableObject {
             defaults.set(true, forKey: Keys.didMigrateNeutralPalette)
         }
 
+        let epoch = inputEpoch
         engine.onControlChange = { [weak self] message in
+            let receivedEpoch = epoch.current
             DispatchQueue.main.async {
+                guard epoch.current == receivedEpoch else { return }
                 self?.receive(message)
             }
         }
@@ -299,16 +304,125 @@ final class AppModel: ObservableObject {
         connectSelectedSource()
     }
 
-    func beginLearning() {
-        guard !isEnabled, isConnected else {
-            return
-        }
-        hasReceivedInput = false
+    func beginLearning() { beginLearning(axis: .x) }
+
+    func beginLearning(axis: InputAxis) {
+        guard !isEnabled, isConnected, inputConfigurationWritable else { return }
+        cancelPendingMappings()
+        resetInputState()
+        inputIssues = []
+        isLearningGate = false
+        learningAxis = axis
+        learningCandidate = nil
+        learningCandidateValue = nil
         isLearning = true
     }
 
     func cancelLearning() {
         isLearning = false
+        isLearningGate = false
+        learningAxis = nil
+        learningCandidate = nil
+        learningCandidateValue = nil
+        if inputConfigurationWritable { inputIssues = [] }
+    }
+
+    @discardableResult
+    func confirmLearning() -> Bool {
+        guard isLearning, let binding = learningCandidate else { return false }
+        let accepted: Bool
+        if isLearningGate { accepted = setTouchGate(binding) }
+        else if let axis = learningAxis { accepted = setInputBinding(binding, for: axis) }
+        else { return false }
+        guard accepted else { return false }
+        cancelLearning()
+        return true
+    }
+
+    func beginGateLearning() {
+        beginLearning(axis: .x)
+        guard isLearning else { return }
+        learningAxis = nil
+        isLearningGate = true
+    }
+
+    @discardableResult
+    func setTouchGate(_ binding: MIDICCBinding?) -> Bool {
+        if binding == nil { return disableTouchGate(confirmPolicyReset: false) }
+        var next = inputConfiguration
+        next.touchGate = binding
+        return applyInputConfiguration(next)
+    }
+
+    @discardableResult
+    func disableTouchGate(confirmPolicyReset: Bool) -> Bool {
+        guard !isEnabled else { return false }
+        if targets.contains(where: { $0.releasePolicy == .returnValue }), !confirmPolicyReset {
+            inputIssues = ["Disabling Touch Gate changes release behaviour to Hold. Confirm to continue."]
+            return false
+        }
+        var next = inputConfiguration
+        next.touchGate = nil
+        guard applyInputConfiguration(next) else { return false }
+        targets = targets.map { target in
+            var updated = target; updated.releasePolicy = .hold; return updated
+        }
+        return true
+    }
+
+    func updateTargetReleasePolicy(id: UUID, policy: TouchReleasePolicy) {
+        guard !isEnabled, policy == .hold || inputConfiguration.touchGate != nil else { return }
+        updateTarget(id: id) { $0.releasePolicy = policy }
+    }
+
+    @discardableResult
+    func setInputBinding(_ binding: MIDICCBinding?, for axis: InputAxis) -> Bool {
+        var next = inputConfiguration
+        next.setBinding(binding, for: axis)
+        return applyInputConfiguration(next)
+    }
+
+    func setInputMode(_ mode: InputMode) {
+        guard mode != inputConfiguration.mode else { return }
+        var next = inputConfiguration
+        next.mode = mode
+        if applyInputConfiguration(next) { cancelLearning() }
+    }
+
+    @discardableResult
+    private func applyInputConfiguration(_ next: InputConfiguration) -> Bool {
+        guard !isEnabled, inputConfigurationWritable else { return false }
+        let issues = next.validate()
+        guard issues.isEmpty else { inputIssues = issues; return false }
+        guard InputConfigurationStore.save(next, to: defaults) else { return false }
+        cancelPendingMappings()
+        inputConfiguration = next
+        inputIssues = []
+        resetInputState()
+        return true
+    }
+
+    /// Explicit recovery only: never overwrite unreadable or newer settings on load.
+    func resetInputConfiguration() {
+        guard !isEnabled else { return }
+        cancelPendingMappings()
+        defaults.removeObject(forKey: InputConfigurationStore.key)
+        inputConfigurationWritable = true
+        _ = applyInputConfiguration(InputConfiguration())
+        cancelLearning()
+    }
+
+    private func resetInputState() {
+        inputEpoch.invalidate()
+        inputState.reset()
+        hasReceivedInput = false
+        lastSentValues.removeAll()
+    }
+
+    func updateTargetInputAxis(id: UUID, axis: InputAxis) {
+        guard !isEnabled else { return }
+        updateTarget(id: id) { $0.inputAxis = axis }
+        resetInputState()
     }
 
     func addTarget() {
@@ -498,6 +612,8 @@ final class AppModel: ObservableObject {
             returnValue: restoreValue
         )
         pendingMappings[id] = pending
+        // Mapping pulses change the host independently of normal live output.
+        lastSentValues[id] = nil
 
         engine.sendControlChange(
             value: pulseStart,
@@ -512,12 +628,13 @@ final class AppModel: ObservableObject {
                 return
             }
             self.pendingMappings[id] = nil
+            self.lastSentValues[id] = nil
             self.engine.sendControlChange(
                 value: maximum,
                 channel: channel,
                 controller: controller
             )
-            if self.isEnabled {
+            if self.isEnabled && self.canActivate {
                 self.sendCurrentValue(to: id)
             } else if restoreValue != maximum {
                 self.engine.sendControlChange(
@@ -542,7 +659,8 @@ final class AppModel: ObservableObject {
             curve: curve,
             minimumLevel: minimumLevel,
             isReversed: isReversed,
-            isTravelReversed: isTravelReversed
+            isTravelReversed: isTravelReversed,
+            inputMode: inputConfiguration.mode
         )
         scenes.append(scene)
     }
@@ -551,6 +669,8 @@ final class AppModel: ObservableObject {
         guard canApplyBuiltInPreset else { return }
         cancelPendingMappings()
         lastSentValues.removeAll()
+        cancelLearning()
+        resetInputState()
         targets = preset.applying(to: targets)
         mode = .standard
         curve = preset.curve
@@ -567,6 +687,9 @@ final class AppModel: ObservableObject {
         }
         cancelPendingMappings()
         lastSentValues.removeAll()
+        cancelLearning()
+        setInputMode(scene.inputMode)
+        resetInputState()
         targets = scene.targets
         mode = scene.mode
         curve = scene.curve
@@ -600,11 +723,11 @@ final class AppModel: ObservableObject {
         let selectedSource = sources.first(where: { $0.id == selectedSourceID })
         isConnected = engine.connect(to: selectedSource)
         if !isConnected || !wasConnected {
-            hasReceivedInput = false
+            resetInputState()
         }
         if !isConnected {
             cancelPendingMappings()
-            isLearning = false
+            cancelLearning()
             if isEnabled {
                 isEnabled = false
             }
@@ -612,95 +735,77 @@ final class AppModel: ObservableObject {
     }
 
     private func receive(_ message: MIDIControlChange) {
+        guard isConnected, !didRestoreForTermination, message.value <= 127 else { return }
         if isLearning {
-            learnedChannel = Int(message.channel)
-            learnedController = Int(message.controller)
-            isLearning = false
-        }
-
-        guard Int(message.channel) == learnedChannel,
-            Int(message.controller) == learnedController
-        else {
+            if learningCandidate == nil {
+                learningCandidate = MIDICCBinding(channel: Int(message.channel), controller: Int(message.controller))
+            }
+            if learningCandidate?.matches(message) == true { learningCandidateValue = message.value }
             return
         }
-
-        hasReceivedInput = true
-        lastInput = message.value
-        updateCurrentOutput()
+        if usesTouchGate, inputConfiguration.touchGate?.matches(message) == true {
+            let transition = inputState.receiveGate(message.value)
+            if transition != .unchanged {
+                let returned = cancelPendingMappings()
+                if transition == .ended, isEnabled {
+                    for target in targets where target.participatesInOutput && target.releasePolicy == .returnValue && !returned.contains(target.id) {
+                        send(value: target.restoreOutput, to: target)
+                    }
+                }
+            }
+            return
+        }
+        if usesTouchGate, inputState.gateState != true { return }
+        let wasReady = inputState.canEmit(requiredAxes: requiredInputAxes, gateEnabled: usesTouchGate)
+        guard let axis = InputAxis.allCases.first(where: { inputConfiguration.binding(for: $0)?.matches(message) == true }),
+              inputConfiguration.mode == .xyz || axis == .x else { return }
+        inputState.receiveAxis(axis, value: message.value)
+        if axis == .x { hasReceivedInput = true; lastInput = message.value }
+        updateCurrentOutput(changedAxis: usesTouchGate && !wasReady ? nil : axis)
     }
 
-    private func updateCurrentOutput() {
-        let maschineOutput = crossfadeOutput(for: .maschineLevel)
-        lastOutput = maschineOutput
-
-        guard isEnabled, !didRestoreForTermination else {
-            return
-        }
-
+    private func updateCurrentOutput(changedAxis: InputAxis? = nil) {
+        lastOutput = crossfadeOutput(for: .maschineLevel, input: inputState.value(for: .x) ?? lastInput)
+        guard isEnabled, !didRestoreForTermination, canActivate else { return }
         for target in targets {
-            let output = target.kind == .maschineLevel
-                ? maschineOutput
-                : crossfadeOutput(for: target.kind)
-            if let value = outputValue(for: target, crossfadeOutput: output),
-                lastSentValues[target.id] != value
-            {
+            if let changedAxis, effectiveAxis(for: target) != changedAxis { continue }
+            if let value = outputValue(for: target), lastSentValues[target.id] != value {
                 send(value: value, to: target)
             }
         }
     }
 
     private func sendCurrentValue(to id: UUID) {
-        guard isEnabled, !didRestoreForTermination,
-            let target = targets.first(where: { $0.id == id })
-        else {
-            return
-        }
-
-        let output = crossfadeOutput(for: target.kind)
-        let value = outputValue(for: target, crossfadeOutput: output)
-            ?? target.restoreOutput
-        send(value: value, to: target)
+        guard isEnabled, !didRestoreForTermination, canActivate,
+              let target = targets.first(where: { $0.id == id }) else { return }
+        let value = canActivate ? outputValue(for: target) : nil
+        send(value: value ?? target.restoreOutput, to: target)
     }
 
-    private func crossfadeOutput(
-        for kind: CrossfadeTargetKind
-    ) -> CrossfadeOutput {
+    private func crossfadeOutput(for kind: CrossfadeTargetKind, input: UInt8) -> CrossfadeOutput {
         CrossfaderTransform.output(
-            for: lastInput,
-            mode: mode,
-            curve: curve,
-            reversed: isReversed,
-            travelReversed: isTravelReversed,
+            for: input, mode: mode, curve: curve,
+            reversed: isReversed, travelReversed: isTravelReversed,
             endpointKill: minimumLevel == .kill,
             minimumOutput: kind.minimumMIDIValue(for: minimumLevel),
             maximumOutput: kind.maximumMIDIValue
         )
     }
 
-    private func outputValue(
-        for target: CrossfadeTarget,
-        crossfadeOutput: CrossfadeOutput
-    ) -> UInt8? {
-        guard target.participatesInOutput else {
-            return nil
-        }
-
+    private func outputValue(for target: CrossfadeTarget) -> UInt8? {
+        guard target.participatesInOutput,
+              let input = inputState.value(for: effectiveAxis(for: target)) else { return nil }
         if mode == .customScene || target.transition == .range {
             return CrossfaderTransform.parameterValue(
-                for: lastInput,
+                for: input,
                 leftOutput: target.sceneOutput(at: target.customLeftPercent),
                 rightOutput: target.sceneOutput(at: target.customRightPercent),
-                curve: target.parameterCurve,
-                inheritedCurve: curve,
+                curve: target.parameterCurve, inheritedCurve: curve,
                 travelReversed: isTravelReversed,
                 maximumOutput: target.kind.maximumMIDIValue
             )
         }
-
-        return CrossfadeRouting.value(
-            for: target.side,
-            output: crossfadeOutput
-        )
+        return CrossfadeRouting.value(for: target.side, output: crossfadeOutput(for: target.kind, input: input))
     }
 
     private func send(value: UInt8, to target: CrossfadeTarget) {
@@ -853,7 +958,7 @@ final class AppModel: ObservableObject {
         return "\(proposed) \(suffix)"
     }
 
-    private static func loadTargets(from defaults: UserDefaults) -> [CrossfadeTarget] {
+    private static func loadTargets(from defaults: any SettingsStore) -> [CrossfadeTarget] {
         if let data = defaults.data(forKey: Keys.targets),
             let decoded = try? JSONDecoder().decode(
                 [CrossfadeTarget].self,
@@ -899,7 +1004,7 @@ final class AppModel: ObservableObject {
     }
 
     private static func loadScenes(
-        from defaults: UserDefaults
+        from defaults: any SettingsStore
     ) -> [CrossfaderScenePreset] {
         guard let data = defaults.data(forKey: Keys.scenes),
             let decoded = try? JSONDecoder().decode(

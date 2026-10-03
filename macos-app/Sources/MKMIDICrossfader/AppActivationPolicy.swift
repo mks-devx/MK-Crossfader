@@ -6,7 +6,7 @@ enum AppActivationPolicy {
     static let showDockIconDefaultsKey = "showDockIcon"
 
     static func shouldShowDockIcon(
-        defaults: UserDefaults = .standard
+        defaults: any SettingsStore = UserDefaults.standard
     ) -> Bool {
         defaults.object(forKey: showDockIconDefaultsKey) as? Bool ?? true
     }

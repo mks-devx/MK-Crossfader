@@ -290,7 +290,7 @@ final class AppUpdateChecker: ObservableObject {
     private static var bundledVersion: String {
         Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "0.3.1"
+        ) as? String ?? "0.4.0"
     }
 }
 

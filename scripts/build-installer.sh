@@ -115,7 +115,7 @@ ditto "$PLUGIN" "$PLUGIN_ROOT/Library/Audio/Plug-Ins/VST3/MK Crossfader.vst3"
 cp "$ROOT/LICENSE" "$DOCS_ROOT/Library/Application Support/MK Crossfader/LICENSE.txt"
 cp "$ROOT/THIRD_PARTY_NOTICES.md" \
     "$DOCS_ROOT/Library/Application Support/MK Crossfader/THIRD_PARTY_NOTICES.md"
-for guide in START_HERE INSTALLATION MASCHINE_SETUP ABLETON_SETUP; do
+for guide in START_HERE INSTALLATION MASCHINE_SETUP ABLETON_SETUP XYZ_SETUP; do
     cp "$ROOT/docs/$guide.md" "$DOCS_ROOT/Library/Application Support/MK Crossfader/$guide.md"
 done
 

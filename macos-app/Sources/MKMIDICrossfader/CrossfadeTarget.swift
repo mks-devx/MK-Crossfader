@@ -87,6 +87,8 @@ struct CrossfadeTarget: Identifiable, Codable, Equatable {
     var customRightPercent: Int
     var parameterCurve: CrossfadeParameterCurve
     var restorePercent: Int
+    var inputAxis: InputAxis
+    var releasePolicy: TouchReleasePolicy
 
     init(
         id: UUID = UUID(),
@@ -98,9 +100,13 @@ struct CrossfadeTarget: Identifiable, Codable, Equatable {
         customLeftPercent: Int? = nil,
         customRightPercent: Int? = nil,
         parameterCurve: CrossfadeParameterCurve = .inherit,
-        restorePercent: Int = 100
+        restorePercent: Int = 100,
+        inputAxis: InputAxis = .x,
+        releasePolicy: TouchReleasePolicy = .hold
     ) {
         self.id = id
+        self.inputAxis = inputAxis
+        self.releasePolicy = releasePolicy
         self.name = name
         self.controller = controller
         self.side = side
@@ -131,10 +137,14 @@ struct CrossfadeTarget: Identifiable, Codable, Equatable {
         case customRightPercent
         case parameterCurve
         case restorePercent
+        case inputAxis
+        case releasePolicy
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        inputAxis = (try? container.decode(InputAxis.self, forKey: .inputAxis)) ?? .x
+        releasePolicy = (try? container.decode(TouchReleasePolicy.self, forKey: .releasePolicy)) ?? .hold
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Target"
         controller = try container.decodeIfPresent(Int.self, forKey: .controller) ?? -1

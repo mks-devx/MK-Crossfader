@@ -9,10 +9,12 @@ verification, and removal.
 
 - [Maschine 3 setup](MASCHINE_SETUP.md): MIDI mapping and VST3 Controller/Target routing.
 - [Ableton Live setup](ABLETON_SETUP.md): MIDI multi-mapping and VST3 crossfading.
+- [XYZ input setup](XYZ_SETUP.md): independent axes and optional touch-release control in the 0.4.0 preview.
 
 ## Choose the Tool
 
-The MIDI app maps one incoming MIDI CC to multiple output CCs. A/B and Range
+The MIDI app maps one incoming MIDI CC, or separate X/Y/Z CC inputs, to multiple
+output CCs. A/B and Range
 targets can be combined, so the same fader or knob can crossfade levels while
 moving a filter or another MIDI-learnable parameter.
 

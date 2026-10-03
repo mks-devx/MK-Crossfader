@@ -5,7 +5,11 @@
 The Swift app owns the physical MIDI input and creates one virtual CoreMIDI
 source named `MK Crossfader`. It keeps a persistent menu-bar control and can
 optionally appear in the Dock or register with macOS to launch at login. It
-converts one absolute MIDI CC into a separate CC for every configured target.
+converts one absolute MIDI CC, or independent X/Y/Z CC inputs, into a separate
+CC for every configured target. In XYZ mode each target chooses its input axis.
+An optional dedicated Touch Gate supports Hold or Return Value on release.
+Output starts paused and requires fresh values on every participating axis;
+with a gate, those values must arrive after touch-on. See [XYZ setup](XYZ_SETUP.md).
 
 This transport uses standard CoreMIDI and does not require Maschine. Any macOS
 software that exposes the virtual source as an input and supports MIDI Learn

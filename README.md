@@ -4,15 +4,15 @@
   <p><strong>Audio Crossfading + MIDI Multi-Mapping</strong></p>
   <p>
     Created for Maschine 3 on macOS with Maschine+ in Controller mode.<br>
-    Also verified with Ableton Live. A Windows 11 x64 VST3 community preview is
-    in development; the MIDI Control App remains macOS-only.
+    Also tested with Ableton Live. Open-source tools for performance transitions
+    and multi-parameter control.
   </p>
   <p>
     <a href="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml"><img src="https://github.com/mks-devx/MK-Crossfader/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-555555?style=flat-square" alt="AGPL-3.0 licence"></a>
   </p>
   <p>
-    <a href="#download-and-install">Availability</a> ·
+    <a href="#download-and-install">Download</a> ·
     <a href="docs/MASCHINE_SETUP.md">Maschine Setup</a> ·
     <a href="docs/ABLETON_SETUP.md">Ableton Live Setup</a> ·
     <a href="#documentation">Documentation</a>
@@ -28,6 +28,11 @@
 > Windows remains source-only. Rehearse your own project and controller before
 > relying on the tools in a live performance.
 
+> **0.4.0 XYZ Preview:** [release and validation limits](https://github.com/mks-devx/MK-Crossfader/releases/tag/v0.4.0).
+> Adds independent X/Y/Z inputs, confirmed learning and optional Touch Gate.
+> XYZ hardware and DAW rehearsal remain outstanding; 0.3.1 stays the stable release.
+> See [XYZ setup](docs/XYZ_SETUP.md).
+
 MK Crossfader began as a focused way to perform transitions from Maschine+
 hardware while running Maschine 3 on a Mac. A single physical fader or knob can
 move several sounds or parameters together, with separate direction, range,
@@ -39,7 +44,7 @@ The project provides two workflows:
 | --- | --- |
 | Turns one incoming MIDI CC into multiple independently shaped CC outputs. | Links one Controller instance to multiple audio Target instances. |
 | Controls levels, filters, sends, effects, and other MIDI-learnable parameters. | Applies smoothed audio gain while leaving the host's mixer faders untouched. |
-| Tested with Maschine 3 and Ableton Live; other macOS MIDI Learn software may also work. | Tested on macOS with Maschine 3 and Ableton Live; a Windows 11 x64 community preview is in development. |
+| Uses the host's MIDI Learn mappings; no plug-in is needed on each destination. | Runs as an audio effect on each destination; no MIDI mapping of its mixer level is needed. |
 
 The components can be used independently. A MIDI controller that sends an
 assignable MIDI CC can provide the physical control: directly to the app, or
@@ -65,9 +70,10 @@ each has a separate, deliberate role.
 
 ## MIDI Control App
 
-The native macOS app receives one MIDI CC and sends a separate CC for every
-configured target through its virtual **MK Crossfader** MIDI port. Each target
-can follow side A, side B, or a custom range.
+The native macOS app receives one MIDI CC, or independent X/Y/Z inputs in the
+0.4.0 preview, and sends a separate CC for every configured target through its
+virtual **MK Crossfader** MIDI port. Each target can follow side A, side B, or a
+custom range; XYZ additionally selects which input axis drives it.
 
 These target types can run together. The same fader or knob can crossfade
 levels assigned to A and B while simultaneously moving a filter, send, effect,
@@ -79,17 +85,30 @@ and trim Utility Gain. Live stores the MIDI mappings in the Live Set; the app
 does not inspect the Set or read parameter values back from Live.
 
 <p align="center">
-  <img src="docs/images/mk-midi-crossfader-app.png" width="820" alt="MK MIDI Crossfader 0.3.0 showing Group A and Group B level targets, a filter Range target, MIDI Learn, Send Learn, Shape, and Return Value">
+  <img src="docs/images/mk-midi-crossfader-app.png" width="820" alt="MK MIDI Crossfader 0.3.1 example: Group A and Group B level targets plus a filter Range target, with MIDI Learn, Send Learn, Shape and Return Value controls">
 </p>
 
-*0.3.0 interface preview, paused for setup. The example combines A/B level
-targets with a filter Range target; one MIDI control can drive all three.*
+*0.3.1 example configuration, paused for setup. A/B level targets and a filter
+Range target can follow the same physical fader or knob.*
 
 Version 0.3.1 also includes **Performance A/B** and **Scene Morph** built-in
 presets. They configure existing targets without changing MIDI assignments,
 names, endpoints or Return Values. Applying a preset requires paused output and
 confirmation; **Save Current & Apply** keeps a snapshot first. A/B and Range can
 still be combined freely. See the [preset details](macos-app/README.md#built-in-presets).
+
+<details>
+<summary><strong>Crossfade settings, presets and update checks</strong></summary>
+
+<p align="center">
+  <img src="docs/images/mk-midi-crossfader-settings.png" width="820" alt="MK MIDI Crossfader 0.3.1 Crossfade settings: Built-in Presets, saved presets, mode, curve, fade floor, Advanced settings and manual update checker">
+</p>
+
+*The same example, scrolled to Crossfade. Built-in Presets configure existing
+targets; saved presets keep your own configurations. Testing prereleases are
+optional, and update checks run only when requested.*
+
+</details>
 
 ## Audio Crossfader VST3
 
@@ -101,16 +120,16 @@ each Target remain part of the sound.
 **Controller**
 
 <p align="center">
-  <img src="docs/images/mk-crossfader-vst3.png" width="820" alt="MK Crossfader VST3 0.3.0 Controller in Session 1 with Group A and Group B online, a linear curve, and the crossfader at 50 percent">
+  <img src="docs/images/mk-crossfader-vst3.png" width="820" alt="MK Crossfader VST3 Controller in Session 1 with Group A and Group B online, a linear curve, and the crossfader at 50 percent">
 </p>
 
-*0.3.0 interface preview. Two connected audio targets share Session 1; the
-Controller is halfway through a linear A-to-B crossfade.*
+*Controller interface, unchanged in 0.4.0. Two connected audio targets share
+Session 1; the Controller is halfway through a linear A-to-B crossfade.*
 
 **Target**
 
 <p align="center">
-  <img src="docs/images/mk-crossfader-vst3-target.png" width="820" alt="MK Crossfader VST3 0.3.0 Target connected to Session 1, Slot 1, displaying minus 6.0 dB gain">
+  <img src="docs/images/mk-crossfader-vst3-target.png" width="820" alt="MK Crossfader VST3 Target connected to Session 1, Slot 1, displaying minus 6.0 dB gain">
 </p>
 
 *The matching Target in Slot 1 displays -6.0 dB: half amplitude at the midpoint
@@ -128,9 +147,9 @@ or parameters in other plug-ins, use the MIDI Control App.
 
 Use the **[Releases page](https://github.com/mks-devx/MK-Crossfader/releases)**
 for the latest macOS release. Download `MK-Crossfader-0.3.1.pkg` and its
-matching `.pkg.sha256` file. The
-combined installer requires macOS 14 or later and includes Apple Silicon and
-Intel builds. It is Developer ID signed, Apple-notarised and stapled.
+matching `.pkg.sha256` file. The combined installer requires macOS 14 or later
+and includes Apple Silicon and Intel builds. It is Developer ID signed,
+Apple-notarised and stapled.
 
 The 0.2.8 and 0.2.9 installer attachments remain withdrawn. Their release pages
 are historical version records, not recommended downloads.
@@ -140,11 +159,12 @@ code, not installable applications or plug-ins. Developers can use the
 [build guide](docs/BUILDING.md); local development builds are not signed public
 releases. There is no Windows download at present.
 
-The experimental Windows build contains the VST3 only and is not part of the
-macOS installer. It must pass automated Windows compilation and plug-in tests
-before a community preview is attached to a release. See the
-[Windows preview guide](docs/WINDOWS_PREVIEW.md) for its exact status, manual
-installation, testing checklist, and reporting process.
+The experimental Windows x64 VST3 passed the automated build and tests for
+0.3.1, but has not been verified in a Windows DAW or on a physical Windows
+system. It remains **source-only**, with no Windows installer or preview archive
+published. The MIDI Control App remains macOS-only. See the
+[Windows preview guide](docs/WINDOWS_PREVIEW.md) for build instructions and the
+host-testing checklist.
 
 The macOS package layout is:
 
@@ -177,6 +197,7 @@ path that should join the crossfade.
 4. Add a **Parameter** target and activate MIDI Learn on the destination control.
 5. Press **Send Learn**, then repeat for the remaining parameters.
 6. Assign each target to A, B, Range, or Off and configure its movement.
+7. Enable **Active** and test the full control range before using it in a performance.
 
 In Ableton Live, enable **Remote** for the **MK Crossfader** input under
 **Settings > Link, Tempo & MIDI**. The app does not require Max for Live.
@@ -186,7 +207,8 @@ In Ableton Live, enable **Remote** for the **MK Crossfader** input under
 | Component | Requirement | Primary Use |
 | --- | --- | --- |
 | MK MIDI Crossfader | macOS 14 or later; CoreMIDI destination with MIDI Learn | Maschine 3, Ableton Live, and other MIDI-learnable macOS software |
-| MK Crossfader VST3 | macOS 13 or later; experimental Windows 11 x64 preview | Maschine 3, Ableton Live, and compatible VST3 hosts |
+| MK Crossfader VST3 | macOS 13 or later; combined installer requires macOS 14 | Audio crossfading in Maschine 3 and Ableton Live |
+| Experimental Windows VST3 source | Windows 11 x64; developer build required | Automated tests passed; DAW and physical Windows testing outstanding |
 | Hardware control | Assignable MIDI CC | Maschine+ in Controller mode or another MIDI controller |
 
 Maschine 3 and Ableton Live are currently tested on macOS. Windows DAW support
@@ -227,8 +249,9 @@ path, host version, and recovery procedure you intend to use.
 
 ## Build And Test
 
-Building from source requires Xcode command-line tools and CMake 3.22 or later.
-Run the complete local verification suite with:
+Building on macOS requires Xcode command-line tools and CMake 3.22 or later.
+Close plug-in hosts before running the local verification suite; the transport
+tests use shared-memory sessions. Then run:
 
 ```zsh
 ./scripts/verify-all.sh
@@ -236,10 +259,9 @@ Run the complete local verification suite with:
 
 This builds and tests both components without installing them. The VST3 build
 uses JUCE 8.0.15, fetched automatically unless `JUCE_SOURCE_DIR` points to a
-local checkout. This development revision configures macOS and Windows VST3
-tests, macOS app tests, host-loading checks, cross-process link checks and the
-public-history privacy audit. It does not package or upload downloads. The
-Windows workflow results are available in GitHub Actions for each revision.
+local checkout. GitHub CI additionally runs the public-history privacy audit,
+packaging regression checks and Windows VST3 build/tests. CI does not package
+or upload downloads. Results are available in GitHub Actions for each revision.
 Passing CI is not a substitute for signing, notarisation or testing in a DAW on
 supported hardware.
 

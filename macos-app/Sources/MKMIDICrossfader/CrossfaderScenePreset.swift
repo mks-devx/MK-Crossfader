@@ -10,6 +10,7 @@ struct CrossfaderScenePreset: Identifiable, Codable, Equatable {
     var minimumLevel: CrossfadeMinimumLevel
     var isReversed: Bool
     var isTravelReversed: Bool
+    var inputMode: InputMode
 
     init(
         id: UUID = UUID(),
@@ -19,9 +20,11 @@ struct CrossfaderScenePreset: Identifiable, Codable, Equatable {
         curve: CrossfadeCurve,
         minimumLevel: CrossfadeMinimumLevel,
         isReversed: Bool,
-        isTravelReversed: Bool
+        isTravelReversed: Bool,
+        inputMode: InputMode = .single
     ) {
         self.id = id
+        self.inputMode = inputMode
         self.name = name
         self.targets = targets
         self.mode = mode
@@ -40,10 +43,12 @@ struct CrossfaderScenePreset: Identifiable, Codable, Equatable {
         case minimumLevel
         case isReversed
         case isTravelReversed
+        case inputMode
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        inputMode = (try? container.decode(InputMode.self, forKey: .inputMode)) ?? .single
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         name = try container.decodeIfPresent(String.self, forKey: .name) ?? "Scene"
         targets = try container.decodeIfPresent(

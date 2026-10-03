@@ -346,3 +346,11 @@ func concurrentChecks() async throws {
     await first.value
     #expect(checker.state == .noPublishedRelease(current: "0.3.0"))
 }
+
+@Test("Development 0.4.0 does not offer the older stable installer")
+@MainActor
+func developmentVersionDoesNotDowngrade() async {
+    let checker = fixtureChecker([releaseFixture("v0.3.1")], current: "0.4.0")
+    await checker.checkForUpdates()
+    #expect(checker.state == .upToDate(current: "0.4.0"))
+}

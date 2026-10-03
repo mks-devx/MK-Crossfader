@@ -80,7 +80,7 @@ fi
 
 print "== Installed setup guides =="
 DOCS="$EXPANDED/MKCrossfaderDocuments.pkg/Payload/Library/Application Support/MK Crossfader"
-for guide in START_HERE INSTALLATION MASCHINE_SETUP ABLETON_SETUP; do
+for guide in START_HERE INSTALLATION MASCHINE_SETUP ABLETON_SETUP XYZ_SETUP; do
     if [[ ! -s "$DOCS/$guide.md" ]]; then
         print -u2 "Missing installed setup guide: $guide.md"
         exit 1
@@ -88,7 +88,7 @@ for guide in START_HERE INSTALLATION MASCHINE_SETUP ABLETON_SETUP; do
 done
 while IFS= read -r -d '' document; do
     case "${document:t}" in
-        START_HERE.md|INSTALLATION.md|MASCHINE_SETUP.md|ABLETON_SETUP.md|LICENSE.txt|THIRD_PARTY_NOTICES.md) ;;
+        START_HERE.md|INSTALLATION.md|MASCHINE_SETUP.md|ABLETON_SETUP.md|XYZ_SETUP.md|LICENSE.txt|THIRD_PARTY_NOTICES.md) ;;
         *) print -u2 "An unexpected file was found in the installed documentation."; exit 1 ;;
     esac
 done < <(find "$DOCS" -type f -print0)
